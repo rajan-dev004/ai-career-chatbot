@@ -1,0 +1,17 @@
+[build]
+  command = "pip install -r requirements.txt && streamlit run geminiBot.py --server.port=8501 --server.address=0.0.0.0"
+  functions = "netlify/functions"
+  publish = "."
+
+[build.environment]
+  PYTHON_VERSION = "3.10"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "streamlit run geminiBot.py"
+  port = 8501
+  targetPort = 8501
