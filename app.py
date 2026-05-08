@@ -15,7 +15,7 @@ load_dotenv()
 # ✅ Gemini API Configuration
 api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-2.5-flash")
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ✅ Streamlit Page Configuration
 st.set_page_config(
@@ -443,6 +443,10 @@ with st.sidebar:
         st.session_state.history_text = ""
         st.rerun()
 
+    st.markdown("---")
+    st.write("🎙️ **Voice Control**")
+    voice_clicked = st.button("🎤 Start Voice Input", key="voice_btn", use_container_width=True)
+
 # ✅ Main Content Area
 st.markdown('<div class="app-header">🎓 AI Career Guidance Chatbot</div>', unsafe_allow_html=True)
 
@@ -498,13 +502,8 @@ def transcribe_voice():
         st.error(f"Microphone error: {e}. Please check browser permissions.")
     return ""
 
-# ✅ Chat Input with Integrated Microphone Button
-voice_col1, voice_col2 = st.columns([0.08, 0.92])
-with voice_col1:
-    voice_clicked = st.button("🎤", key="voice_btn", help="Voice Input", use_container_width=True)
-
-with voice_col2:
-    user_input = st.chat_input("Type your message here (Shift+Enter for new line)...")
+# ✅ Chat Input
+user_input = st.chat_input("Type your message here (Shift+Enter for new line)...")
 
 # Handle voice input
 if voice_clicked:
