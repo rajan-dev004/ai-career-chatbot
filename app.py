@@ -211,34 +211,57 @@ st.markdown("""
         background: rgba(255, 255, 255, 0.3);
     }
     
-    /* Chat Input Container with Microphone Button */
-    .chat-input-container {
-        position: relative;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+    /* ====== CHAT INPUT wrapper — needs position:relative for mic ====== */
+    [data-testid="stChatInput"] {
+        position: sticky; bottom: 0; z-index: 100;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
     }
-    
-    /* Style for voice button to match input height */
-    div[data-testid="column"]:first-child button {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #888 !important;
-        font-size: 1.3rem !important;
-        padding: 10px 12px !important;
-        border-radius: 12px !important;
-        transition: all 0.2s !important;
-        height: auto !important;
-        min-height: 48px !important;
+    /* The inner form container needs relative so mic can be absolute inside it */
+    [data-testid="stChatInput"] > div {
+        position: relative !important;
     }
-    
-    div[data-testid="column"]:first-child button:hover {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-color: #00f260 !important;
-        color: #00f260 !important;
-        transform: scale(1.05) !important;
+    .stChatInput textarea {
+        padding-left: 50px !important;
+        padding-right: 60px !important;
+        border-radius: 14px !important;
+        line-height: 1.6 !important;
+        min-height: 52px !important;
     }
+
+    /* ====== MIC OVERLAY — sits left inside the bar ====== */
+    .mic-overlay-btn {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1001;
+        cursor: pointer;
+        font-size: 1.3rem;
+        line-height: 1;
+        user-select: none;
+        width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.13);
+        transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .mic-overlay-btn:hover {
+        background: rgba(5,117,230,0.25);
+        border-color: #0575e6;
+        box-shadow: 0 0 8px rgba(5,117,230,0.4);
+        transform: translateY(-50%) scale(1.1);
+    }
+    .mic-overlay-btn.listening {
+        background: rgba(220,50,50,0.3);
+        border-color: #e05;
+        animation: mic-pulse 1s ease-in-out infinite;
+    }
+    @keyframes mic-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(220,50,50,0.5); }
+        50% { box-shadow: 0 0 0 7px rgba(220,50,50,0); }
+    }
+    .hidden-btn { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -498,13 +521,14 @@ def transcribe_voice():
         st.error(f"Microphone error: {e}. Please check browser permissions.")
     return ""
 
-# ✅ Chat Input with Integrated Microphone Button
-voice_col1, voice_col2 = st.columns([0.08, 0.92])
-with voice_col1:
-    voice_clicked = st.button("🎤", key="voice_btn", help="Voice Input", use_container_width=True)
+# ✅ Hidden Voice Trigger
+with st.container():
+    st.markdown('<div class="hidden-btn">', unsafe_allow_html=True)
+    voice_clicked = st.button("VoiceTrigger", key="voice_trigger_btn")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with voice_col2:
-    user_input = st.chat_input("Type your message here (Shift+Enter for new line)...")
+# ✅ Chat Input
+user_input = st.chat_input("Type your message here (Shift+Enter for new line)...")
 
 # Handle voice input
 if voice_clicked:
@@ -594,33 +618,64 @@ if user_input:
 # ✅ Sync localStorage on every render
 save_chat_history_to_storage()
 
-# ✅ Smooth scroll script
+# ✅ Smooth scroll + mic overlay JS
 st.markdown("""
 <script>
 // Auto-scroll to bottom of messages
 window.addEventListener('load', function() {
     setTimeout(function() {
-        const messagesContainer = document.querySelector('.messages-wrapper');
-        if (messagesContainer) {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-    }, 100);
+        const el = document.querySelector('.messages-wrapper');
+        if (el) el.scrollTop = el.scrollHeight;
+        setupMicOverlay();
+    }, 600);
 });
 
-// Scroll on new messages
+// Scroll on new messages & re-inject mic if needed
 const observer = new MutationObserver(function() {
-    const messagesContainer = document.querySelector('.messages-wrapper');
-    if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
+    const el = document.querySelector('.messages-wrapper');
+    if (el) el.scrollTop = el.scrollHeight;
+    setupMicOverlay();
 });
+
+// Setup Mic Overlay — injected into the chat input's inner form div
+function setupMicOverlay() {
+    if (document.querySelector('.mic-overlay-btn')) return;
+
+    // Target the inner <div> inside stChatInput so position:relative works
+    const chatInput = document.querySelector('div[data-testid="stChatInput"] > div');
+    if (!chatInput) return;
+
+    const micBtn = document.createElement('div');
+    micBtn.className = 'mic-overlay-btn';
+    micBtn.innerHTML = '🎤';
+    micBtn.title = 'Click to use voice input';
+
+    micBtn.onclick = function() {
+        micBtn.classList.add('listening');
+        // Find and click the hidden Streamlit VoiceTrigger button
+        const allBtns = window.parent.document.querySelectorAll('button');
+        for (let b of allBtns) {
+            if (b.innerText.trim() === 'VoiceTrigger') {
+                b.click();
+                break;
+            }
+        }
+        // Remove listening state after 5s fallback
+        setTimeout(() => micBtn.classList.remove('listening'), 5000);
+    };
+
+    chatInput.appendChild(micBtn);
+}
 
 setTimeout(function() {
-    const messagesContainer = document.querySelector('.messages-wrapper');
-    if (messagesContainer) {
-        observer.observe(messagesContainer, { childList: true, subtree: true });
-    }
-}, 500);
+    const el = document.querySelector('.messages-wrapper');
+    if (el) observer.observe(el, { childList: true, subtree: true });
+    setupMicOverlay();
+}, 700);
+
+// Also retry injection after slight delay for slow Streamlit renders
+setTimeout(setupMicOverlay, 1500);
+setTimeout(setupMicOverlay, 3000);
 </script>
 """, unsafe_allow_html=True)
 
