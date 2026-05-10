@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-base:       #0a0a0f;
+  --bg-sidebar:    #0d0d14;
+  --bg-card:       #16161e;
+  --bg-input:      #1a1a24;
+  --border-subtle: rgba(255,255,255,0.07);
+  --border-hover:  rgba(255,255,255,0.15);
+  --accent:        #780206;
+  --accent-light:  #e02424;
+  --text-1:        #f0f0f5;
+  --text-2:        #9898b0;
+  --text-3:        #55556a;
+  --scrollbar-w:   6px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-1);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar              { width: var(--scrollbar-w); }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: rgba(255,255,255,0.1); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover  { background: rgba(255,255,255,0.2); }
+
+/* ── Selection ── */
+::selection { background: rgba(99,102,241,0.35); color: #fff; }
+
+/* ── Glass card ── */
+@layer components {
+  .glass {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .glass-hover {
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .glass-hover:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: var(--border-hover);
+  }
+
+  /* AI response markdown styling */
+  .prose-ai {
+    color: var(--text-1);
+    line-height: 1.7;
+  }
+  .prose-ai h1, .prose-ai h2, .prose-ai h3 {
+    color: #e0e0f0;
+    font-weight: 600;
+    margin: 1.2em 0 0.5em;
+  }
+  .prose-ai h2 { font-size: 1.1rem; }
+  .prose-ai h3 { font-size: 1rem; }
+  .prose-ai p  { margin: 0.6em 0; }
+  .prose-ai ul, .prose-ai ol { padding-left: 1.4em; margin: 0.5em 0; }
+  .prose-ai li { margin: 0.3em 0; }
+  .prose-ai strong { color: #c7c7e8; font-weight: 600; }
+  .prose-ai em    { color: var(--text-2); }
+  .prose-ai a     { color: var(--accent-light); text-decoration: underline; text-underline-offset: 2px; }
+  .prose-ai hr    { border-color: var(--border-subtle); margin: 1em 0; }
+  .prose-ai blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 1em;
+    color: var(--text-2);
+    margin: 0.8em 0;
+  }
+  .prose-ai table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.9rem; }
+  .prose-ai th, .prose-ai td {
+    padding: 0.5em 0.75em;
+    border: 1px solid var(--border-subtle);
+    text-align: left;
+  }
+  .prose-ai th { background: rgba(99,102,241,0.12); color: var(--accent-light); font-weight: 600; }
+  .prose-ai code:not(pre code) {
+    background: rgba(99,102,241,0.15);
+    color: #c4b5fd;
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+  }
+  .prose-ai pre {
+    background: #0f0f17 !important;
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 1em;
+    overflow-x: auto;
+    margin: 0.8em 0;
+    font-size: 0.85rem;
+    position: relative;
+  }
+  .prose-ai pre code { background: none !important; color: inherit; padding: 0; }
+}
+
+/* ── Typing cursor blink ── */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.cursor-blink { animation: blink 0.8s step-end infinite; }
+
+/* ── Gradient text ── */
+.gradient-text {
+  background: linear-gradient(135deg, #780206, #061161);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
