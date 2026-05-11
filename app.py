@@ -1,7 +1,6 @@
 import os
 import streamlit as st
 import time
-import json
 import uuid
 from datetime import datetime
 import requests
@@ -12,676 +11,499 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ✅ Gemini API Configuration
+# ── Gemini Configuration ─────────────────────────────────────────────────────
 api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-# ✅ Streamlit Page Configuration
+# ── Page Config ──────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="AI Career Chatbot 🎓",
-    page_icon="🤖",
+    page_title="AI Career Chatbot",
+    page_icon="🎓",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-# ✅ Initialize Session State
+# ── Session State ────────────────────────────────────────────────────────────
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = {}  # {chat_id: {title, timestamp, messages}}
-
+    st.session_state.chat_history = {}
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = None
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
 if "history_text" not in st.session_state:
     st.session_state.history_text = ""
-
 if "career_mode" not in st.session_state:
     st.session_state.career_mode = "general"
 
-# ✅ Load Lottie Animation
-def load_lottieurl(url):
-    """Load Lottie animation from URL"""
+# ── Inject CSS safely (avoids nth-child parser bug) ──────────────────────────
+def inject_css():
+    css = """
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; }
+
+    html, body, [data-testid="stAppViewContainer"] {
+        background: #212121 !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    #MainMenu, footer, header { visibility: hidden; }
+    [data-testid="stToolbar"] { display: none !important; }
+    [data-testid="stDecoration"] { display: none !important; }
+
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 0 !important;
+        max-width: 860px !important;
+    }
+
+    /* ── Sidebar ── */
+    [data-testid="stSidebar"] {
+        background: #171717 !important;
+        border-right: 1px solid #2f2f2f !important;
+    }
+    [data-testid="stSidebar"] > div:first-child {
+        padding: 14px 10px !important;
+    }
+    .sidebar-brand {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #ececec;
+        padding: 4px 4px 14px 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-bottom: 1px solid #2f2f2f;
+        margin-bottom: 10px;
+    }
+    .sidebar-label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #555;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 10px 4px 4px 4px;
+    }
+
+    /* sidebar buttons */
+    [data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button,
+    [data-testid="stSidebar"] [data-testid="stBaseButton-primary"] {
+        background: #2a2a2a !important;
+        color: #ececec !important;
+        border: 1px solid #3a3a3a !important;
+        border-radius: 8px !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        text-align: left !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button:hover,
+    [data-testid="stSidebar"] [data-testid="stBaseButton-primary"]:hover {
+        background: #3a3a3a !important;
+        border-color: #505050 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > button,
+    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] {
+        background: transparent !important;
+        color: #aaa !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 0.82rem !important;
+        font-weight: 400 !important;
+        text-align: left !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > button:hover,
+    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:hover {
+        background: #2a2a2a !important;
+        color: #fff !important;
+    }
+
+    /* selectbox in sidebar */
+    [data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        background: #2a2a2a !important;
+        border: 1px solid #3a3a3a !important;
+        border-radius: 8px !important;
+        color: #ececec !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* ── Main chat messages ── */
+    [data-testid="stChatMessage"] {
+        background: transparent !important;
+        border: none !important;
+        padding: 6px 0 !important;
+    }
+
+    /* ── Chat input ── */
+    [data-testid="stChatInput"] textarea {
+        background: #2f2f2f !important;
+        color: #ececec !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.95rem !important;
+        border-radius: 12px !important;
+        border: 1px solid #404040 !important;
+    }
+    [data-testid="stChatInput"] textarea:focus {
+        border-color: #555 !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #666 !important;
+    }
+
+    /* ── Timestamp ── */
+    .msg-ts {
+        font-size: 0.67rem;
+        color: #555;
+        margin-top: 2px;
+    }
+
+    /* ── Typing animation ── */
+    .typing-row {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 0;
+    }
+    .dot {
+        width: 7px; height: 7px;
+        background: #777;
+        border-radius: 50%;
+        animation: blink 1.2s infinite;
+    }
+    .dot.d2 { animation-delay: 0.2s; }
+    .dot.d3 { animation-delay: 0.4s; }
+    @keyframes blink {
+        0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+        40%           { opacity: 1;    transform: scale(1);   }
+    }
+
+    /* ── Welcome screen ── */
+    .welcome-wrap {
+        text-align: center;
+        padding: 40px 20px 20px 20px;
+    }
+    .welcome-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #ececec;
+        margin-bottom: 8px;
+    }
+    .welcome-sub {
+        font-size: 0.95rem;
+        color: #777;
+        margin-bottom: 28px;
+    }
+
+    /* ── Suggestion buttons ── */
+    [data-testid="stMainBlockContainer"] [data-testid="stBaseButton-secondary"] > button {
+        background: #2a2a2a !important;
+        color: #ccc !important;
+        border: 1px solid #3a3a3a !important;
+        border-radius: 10px !important;
+        font-size: 0.85rem !important;
+        text-align: left !important;
+        padding: 10px 14px !important;
+        line-height: 1.4 !important;
+        white-space: normal !important;
+        height: auto !important;
+    }
+    [data-testid="stMainBlockContainer"] [data-testid="stBaseButton-secondary"] > button:hover {
+        background: #363636 !important;
+        border-color: #505050 !important;
+        color: #fff !important;
+    }
+
+    /* ── Divider ── */
+    hr { border-color: #2f2f2f !important; margin: 8px 0 !important; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #505050; }
+
+    /* ── stAlert (info/warning) in sidebar ── */
+    [data-testid="stSidebar"] .stAlert {
+        font-size: 0.8rem;
+        border-radius: 8px;
+    }
+    """
+    st.html(f"<style>{css}</style>")
+
+inject_css()
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+def load_lottie(url):
     try:
         r = requests.get(url, timeout=5)
         if r.status_code == 200:
             return r.json()
-    except:
+    except Exception:
         pass
     return None
 
-lottie_ai = load_lottieurl("https://assets10.lottiefiles.com/packages/lf20_tno6cg2w.json")
 
-# ✅ Custom CSS for Fixed Layout (100vh, no page scroll)
-st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-    /* Reset Streamlit Defaults */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Main App Container - Fixed Height */
-    .main .block-container {
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
-        max-width: 100%;
-    }
-    
-    /* Body and HTML - Fixed Height, No Scroll */
-    html, body, #root {
-        height: 100vh;
-        overflow: hidden;
-    }
-    
-    /* Hide default Streamlit scrolling */
-    .main {
-        height: 100vh;
-        overflow: hidden;
-    }
-    
-    /* Sidebar Styling */
-    .css-1d391kg {
-        padding-top: 0.5rem;
-    }
-    
-    /* Chat History Item Styling */
-    .chat-history-btn {
-        width: 100%;
-        text-align: left;
-        padding: 10px;
-        margin: 5px 0;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        color: white;
-        transition: all 0.2s;
-    }
-    
-    .chat-history-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: #0575e6;
-    }
-    
-    /* Header Styling */
-    .app-header {
-        background: linear-gradient(145deg, #1e3c72, #2a5298);
-        color: white;
-        padding: 15px 20px;
-        margin: -1rem -1rem 1rem -1rem;
-        border-radius: 0;
-        font-family: 'Poppins', sans-serif;
-        font-size: 1.5rem;
-        font-weight: 600;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-    
-    /* Messages Container - Scrollable Only */
-    .messages-wrapper {
-        max-height: calc(100vh - 350px);
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 10px 0;
-    }
-    
-    /* Message Timestamp */
-    .message-timestamp {
-        font-size: 0.7rem;
-        color: #888;
-        margin-top: 4px;
-    }
-    
-    /* Quick Action Buttons */
-    .quick-action-container {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-    }
-    
-    /* Career Mode Selector */
-    .mode-selector-container {
-        margin-bottom: 1rem;
-        padding: 10px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-    }
-    
-    /* Typing Indicator */
-    .typing-indicator {
-        display: inline-flex;
-        gap: 5px;
-        padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-    }
-    
-    .typing-dot {
-        width: 8px;
-        height: 8px;
-        background: #888;
-        border-radius: 50%;
-        animation: typing 1.4s infinite;
-    }
-    
-    .typing-dot:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-    
-    .typing-dot:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-    
-    @keyframes typing {
-        0%, 60%, 100% {
-            transform: translateY(0);
-            opacity: 0.7;
-        }
-        30% {
-            transform: translateY(-10px);
-            opacity: 1;
-        }
-    }
-    
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-        .messages-wrapper {
-            max-height: calc(100vh - 400px);
-        }
-    }
-    
-    /* Custom scrollbar */
-    .messages-wrapper::-webkit-scrollbar {
-        width: 8px;
-    }
-    
-    .messages-wrapper::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 4px;
-    }
-    
-    .messages-wrapper::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 4px;
-    }
-    
-    .messages-wrapper::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.3);
-    }
-    
-    /* ====== CHAT INPUT wrapper — needs position:relative for mic ====== */
-    [data-testid="stChatInput"] {
-        position: sticky; bottom: 0; z-index: 100;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-    /* The inner form container needs relative so mic can be absolute inside it */
-    [data-testid="stChatInput"] > div {
-        position: relative !important;
-    }
-    .stChatInput textarea {
-        padding-left: 50px !important;
-        padding-right: 60px !important;
-        border-radius: 14px !important;
-        line-height: 1.6 !important;
-        min-height: 52px !important;
-    }
+def generate_chat_title(msg):
+    return msg[:47] + "..." if len(msg) > 50 else msg
 
-    /* ====== MIC OVERLAY — sits left inside the bar ====== */
-    .mic-overlay-btn {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1001;
-        cursor: pointer;
-        font-size: 1.3rem;
-        line-height: 1;
-        user-select: none;
-        width: 32px; height: 32px;
-        display: flex; align-items: center; justify-content: center;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.13);
-        transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
-    }
-    .mic-overlay-btn:hover {
-        background: rgba(5,117,230,0.25);
-        border-color: #0575e6;
-        box-shadow: 0 0 8px rgba(5,117,230,0.4);
-        transform: translateY(-50%) scale(1.1);
-    }
-    .mic-overlay-btn.listening {
-        background: rgba(220,50,50,0.3);
-        border-color: #e05;
-        animation: mic-pulse 1s ease-in-out infinite;
-    }
-    @keyframes mic-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(220,50,50,0.5); }
-        50% { box-shadow: 0 0 0 7px rgba(220,50,50,0); }
-    }
-    .hidden-btn { display: none !important; }
-</style>
-""", unsafe_allow_html=True)
 
-# ✅ Load Chat History from localStorage (via JavaScript component)
-def load_chat_history_from_storage():
-    """Load chat history from localStorage using JavaScript"""
-    try:
-        # Try to get from session state first (synced via JS)
-        if hasattr(st.session_state, '_local_storage_chats'):
-            return st.session_state._local_storage_chats
-    except:
-        pass
-    return {}
-
-# ✅ Save Chat History to localStorage
-def save_chat_history_to_storage():
-    """Sync chat history to localStorage via JavaScript"""
-    if st.session_state.chat_history:
-        st.markdown(f"""
-        <script>
-        (function() {{
-            try {{
-                const chatHistory = {json.dumps(st.session_state.chat_history)};
-                localStorage.setItem('career_chatbot_history', JSON.stringify(chatHistory));
-            }} catch(e) {{
-                console.error('Error saving to localStorage:', e);
-            }}
-        }})();
-        </script>
-        """, unsafe_allow_html=True)
-
-# ✅ Load Chat History on App Load
-def init_chat_history():
-    """Initialize chat history from localStorage"""
-    st.markdown("""
-    <script>
-    (function() {
-        try {
-            const stored = localStorage.getItem('career_chatbot_history');
-            if (stored) {
-                const history = JSON.parse(stored);
-                // Store in a hidden input to sync with Streamlit
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.id = 'chat_history_storage';
-                input.value = stored;
-                document.body.appendChild(input);
-            }
-        } catch(e) {
-            console.error('Error loading from localStorage:', e);
-        }
-    })();
-    </script>
-    """, unsafe_allow_html=True)
-
-# Initialize on first load
-if "_history_initialized" not in st.session_state:
-    init_chat_history()
-    st.session_state._history_initialized = True
-
-# ✅ Generate Chat Title from First Message
-def generate_chat_title(first_message):
-    """Generate a title from the first user message"""
-    if len(first_message) > 50:
-        return first_message[:47] + "..."
-    return first_message
-
-# ✅ Career Guidance Prompts
 def get_career_prompt(mode, user_input):
-    """Get appropriate prompt based on career guidance mode"""
-    base_prompt = "You are an expert career guidance counselor and AI assistant specialized in career development, skills assessment, and professional growth. Provide detailed, actionable, and personalized advice."
-    
+    base = (
+        "You are an expert career guidance counselor specialised in career development, "
+        "skills assessment and professional growth. Give detailed, actionable, personalised advice."
+    )
     prompts = {
-        "general": f"{base_prompt} Answer the user's career-related question comprehensively.",
-        "roadmap": f"""{base_prompt} Generate a detailed 6-12 month career roadmap with:
-        - Monthly milestones and goals
-        - Specific learning objectives
-        - Recommended courses, resources, or certifications
-        - Practical steps and actions
-        - Timeline visualization
-        Format it clearly with sections and actionable items.""",
-        "skill_gap": f"""{base_prompt} Perform a skill gap analysis:
-        - Identify current skills from user's input
-        - Determine required skills for target role
-        - Highlight specific skill gaps
-        - Provide learning resources and practice opportunities
-        - Suggest concrete steps to bridge each gap""",
-        "comparison": f"""{base_prompt} Compare job roles mentioned by the user:
-        - Responsibilities and day-to-day tasks
-        - Required skills and qualifications
-        - Career progression paths
-        - Salary ranges (if known)
-        - Industry demand and outlook
-        - Which role might be a better fit and why""",
-        "projects": f"""{base_prompt} Recommend relevant projects for the user's career path:
-        - Project descriptions and objectives
-        - Technologies and tools to use
-        - Difficulty level (beginner/intermediate/advanced)
-        - Learning outcomes and skills gained
-        - How each project helps build their portfolio
-        - Step-by-step guidance for getting started"""
+        "general":    f"{base} Answer the user's career question comprehensively.",
+        "roadmap":    f"{base} Build a detailed 6-12 month career roadmap with monthly milestones, learning objectives, recommended resources, and practical steps.",
+        "skill_gap":  f"{base} Do a thorough skill-gap analysis: current skills → target role requirements → gaps → resources to close them.",
+        "comparison": f"{base} Compare the job roles the user mentions across responsibilities, skills, salary, progression, and fit.",
+        "projects":   f"{base} Recommend portfolio projects suited to the user's career goal with tech stack, difficulty level, and learning outcomes.",
     }
-    
     return prompts.get(mode, prompts["general"]) + f"\n\nUser question: {user_input}"
 
-# ✅ Load Chat from History
-def load_chat_from_history(chat_id):
-    """Load a specific chat from history"""
-    if chat_id and chat_id in st.session_state.chat_history:
-        chat_data = st.session_state.chat_history[chat_id]
-        st.session_state.messages = chat_data.get("messages", [])
-        st.session_state.current_chat_id = chat_id
-        # Rebuild history text
-        history_text = ""
-        for msg in st.session_state.messages:
-            role_label = "You" if msg["role"] == "user" else "AI"
-            timestamp = msg.get("timestamp", "")
-            history_text += f"[{timestamp}] {role_label}: {msg['content']}\n\n"
-        st.session_state.history_text = history_text
 
-# ✅ Create New Chat
+def load_chat(chat_id):
+    if chat_id and chat_id in st.session_state.chat_history:
+        data = st.session_state.chat_history[chat_id]
+        st.session_state.messages = data.get("messages", [])
+        st.session_state.current_chat_id = chat_id
+        ht = ""
+        for m in st.session_state.messages:
+            label = "You" if m["role"] == "user" else "AI"
+            ht += f"[{m.get('timestamp','')}] {label}: {m['content']}\n\n"
+        st.session_state.history_text = ht
+
+
 def create_new_chat():
-    """Create a new chat conversation"""
-    # Save current chat if it exists
-    if st.session_state.messages and st.session_state.current_chat_id:
-        st.session_state.chat_history[st.session_state.current_chat_id] = {
-            "title": st.session_state.chat_history[st.session_state.current_chat_id]["title"],
-            "timestamp": st.session_state.chat_history[st.session_state.current_chat_id]["timestamp"],
-            "messages": st.session_state.messages.copy()
-        }
-        save_chat_history_to_storage()
-    
-    # Create new chat
-    new_chat_id = str(uuid.uuid4())
-    st.session_state.current_chat_id = new_chat_id
+    cid = st.session_state.current_chat_id
+    if st.session_state.messages and cid and cid in st.session_state.chat_history:
+        st.session_state.chat_history[cid]["messages"] = st.session_state.messages.copy()
+    new_id = str(uuid.uuid4())
+    st.session_state.current_chat_id = new_id
     st.session_state.messages = []
     st.session_state.history_text = ""
-    st.session_state.chat_history[new_chat_id] = {
+    st.session_state.chat_history[new_id] = {
         "title": "New Chat",
         "timestamp": datetime.now().isoformat(),
-        "messages": []
+        "messages": [],
     }
 
-# ✅ Sidebar - Chat History
+
+def transcribe_voice():
+    try:
+        r = sr.Recognizer()
+        with sr.Microphone() as source:
+            st.toast("🎤 Listening… speak now!")
+            audio = r.listen(source, timeout=8)
+            try:
+                return r.recognize_google(audio)
+            except sr.UnknownValueError:
+                st.warning("Could not understand speech. Please try again.")
+            except sr.RequestError as e:
+                st.error(f"Speech API error: {e}")
+    except Exception as e:
+        st.error(f"Microphone error: {e}")
+    return ""
+
+
+lottie_ai = load_lottie("https://assets10.lottiefiles.com/packages/lf20_tno6cg2w.json")
+
+# ════════════════════════════════════════════════════════════════════════════
+# SIDEBAR
+# ════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.markdown('<div class="app-header">🏆 Excel Your Career</div>', unsafe_allow_html=True)
-    
-    # New Chat Button
-    if st.button("➕ New Chat", use_container_width=True, type="primary"):
+    st.markdown('<div class="sidebar-brand">🎓 Excel Your Career</div>', unsafe_allow_html=True)
+
+    if st.button("＋  New Chat", use_container_width=True, type="primary"):
         create_new_chat()
         st.rerun()
-    
-    st.markdown("---")
-    st.markdown("### 💬 Chat History")
-    
-    # Chat History List
+
+    st.markdown('<div class="sidebar-label">Recent</div>', unsafe_allow_html=True)
+
     if st.session_state.chat_history:
-        # Sort by timestamp (newest first)
         sorted_chats = sorted(
             st.session_state.chat_history.items(),
             key=lambda x: x[1]["timestamp"],
-            reverse=True
+            reverse=True,
         )
-        
         for chat_id, chat_data in sorted_chats:
             is_active = chat_id == st.session_state.current_chat_id
             try:
-                timestamp = datetime.fromisoformat(chat_data["timestamp"])
-                time_str = timestamp.strftime("%b %d, %H:%M")
-            except:
-                time_str = "Recent"
-            
-            # Create button label with title and time
-            label = f"{chat_data['title']}\n_{time_str}_"
-            
-            if st.button(
-                label,
-                key=f"chat_{chat_id}",
-                use_container_width=True,
-                type="primary" if is_active else "secondary"
-            ):
-                load_chat_from_history(chat_id)
+                ts = datetime.fromisoformat(chat_data["timestamp"]).strftime("%b %d")
+            except Exception:
+                ts = ""
+            label = f"{'● ' if is_active else '○ '}{chat_data['title']}  ·  {ts}"
+            if st.button(label, key=f"ch_{chat_id}", use_container_width=True,
+                         type="primary" if is_active else "secondary"):
+                load_chat(chat_id)
                 st.rerun()
     else:
-        st.info("No chat history yet. Start a new conversation!")
-    
+        st.caption("No chats yet — start a conversation!")
+
     st.markdown("---")
+    st.markdown('<div class="sidebar-label">Guidance Mode</div>', unsafe_allow_html=True)
+
+    mode_map = {
+        "💬  General":          "general",
+        "🗺️  Career Roadmap":   "roadmap",
+        "🔍  Skill Gap":        "skill_gap",
+        "⚖️  Job Comparison":   "comparison",
+        "🛠️  Project Ideas":    "projects",
+    }
     
-    # Download and Clear buttons
+    inv_mode_map = {v: k for k, v in mode_map.items()}
+    current_label = inv_mode_map.get(st.session_state.career_mode, "💬  General")
+    
+    # Use index instead of key to avoid internal Streamlit KeyError
+    mode_labels = list(mode_map.keys())
+    try:
+        default_idx = mode_labels.index(current_label)
+    except ValueError:
+        default_idx = 0
+        
+    sel = st.selectbox(
+        "Mode",
+        mode_labels,
+        index=default_idx,
+        label_visibility="collapsed",
+    )
+    st.session_state.career_mode = mode_map.get(sel, "general")
+
+    st.markdown("---")
+
+    if st.button("🎤  Voice Input", use_container_width=True, type="secondary"):
+        text = transcribe_voice()
+        if text:
+            st.session_state.voice_pending = text
+            st.rerun()
+
     if st.session_state.history_text:
         st.download_button(
-            "💾 Download Current Chat",
+            "💾  Download Chat",
             data=st.session_state.history_text,
             file_name=f"career_chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-            use_container_width=True
+            use_container_width=True,
         )
-    
-    if st.button("🧹 Clear All Chats", use_container_width=True):
+
+    if st.button("🗑️  Clear All Chats", use_container_width=True, type="secondary"):
         st.session_state.chat_history = {}
         st.session_state.current_chat_id = None
         st.session_state.messages = []
         st.session_state.history_text = ""
         st.rerun()
 
-# ✅ Main Content Area
-st.markdown('<div class="app-header">🎓 AI Career Guidance Chatbot</div>', unsafe_allow_html=True)
 
-# ✅ Messages Container (Scrollable Only)
-st.markdown('<div class="messages-wrapper">', unsafe_allow_html=True)
+# ════════════════════════════════════════════════════════════════════════════
+# MAIN AREA
+# ════════════════════════════════════════════════════════════════════════════
 
+# ── Welcome / empty state ────────────────────────────────────────────────────
 if not st.session_state.messages:
-    # Welcome area with Lottie animation
-    col1, col2 = st.columns([1, 2])
-    with col1:
+    col_l, col_c, col_r = st.columns([1, 4, 1])
+    with col_c:
         if lottie_ai:
-            st_lottie(lottie_ai, height=250, key="welcome_lottie")
-    with col2:
-        st.markdown("""
-        <div style="padding: 20px;">
-            <h2 style="color: white; margin-bottom: 15px;">👋 Welcome to AI Career Guidance!</h2>
-            <p style="color: #ccc; line-height: 1.6; font-size: 1rem;">
-                Ask me anything about your career path, skills, job roles, or get a personalized roadmap.<br><br>
-                • <strong>Roadmap</strong> - Get a 6-12 month career plan<br>
-                • <strong>Skill Gap Analysis</strong> - Identify areas to improve<br>
-                • <strong>Job Comparison</strong> - Compare different roles<br>
-                • <strong>Project Recommendations</strong> - Build your portfolio
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+            st_lottie(lottie_ai, height=120, key="welcome_lottie")
+        st.markdown(
+            '<div class="welcome-title">How can I help your career today?</div>'
+            '<div class="welcome-sub">Ask anything — roadmaps, skill gaps, job comparisons, project ideas, and more.</div>',
+            unsafe_allow_html=True,
+        )
+
+    # Suggestion cards — 2 per row
+    suggestions = [
+        ("🗺️ Build a career roadmap",      "Create a 6-month roadmap to become a Data Scientist"),
+        ("🔍 Analyse my skill gap",         "I know Python & SQL — what do I need for an ML Engineer role?"),
+        ("⚖️ Compare two roles",            "Compare Software Engineer vs Product Manager career paths"),
+        ("🛠️ Suggest portfolio projects",   "Recommend portfolio projects for a Full-Stack Developer"),
+    ]
+    c1, c2 = st.columns(2)
+    for i, (title, prompt) in enumerate(suggestions):
+        col = c1 if i % 2 == 0 else c2
+        with col:
+            if st.button(title, key=f"sug_{i}", use_container_width=True, type="secondary"):
+                st.session_state.voice_pending = prompt
+                st.rerun()
+
 else:
-    # Display all messages
+    # ── Display chat history ──────────────────────────────────────────────
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
             if "timestamp" in msg:
-                st.markdown(f'<div class="message-timestamp">{msg["timestamp"]}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg-ts">{msg["timestamp"]}</div>', unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)
 
-# ✅ Voice to Text Function (Preserved from original)
-def transcribe_voice():
-    """Voice to text transcription (requires microphone permissions)"""
-    try:
-        r = sr.Recognizer()
-        with sr.Microphone() as source:
-            st.info("🎤 Listening... Speak now!")
-            audio = r.listen(source)
-            try:
-                text = r.recognize_google(audio)
-                st.success("🗣️ You said: " + text)
-                return text
-            except sr.UnknownValueError:
-                st.error("Speech not recognized. Try again!")
-            except sr.RequestError as e:
-                st.error(f"Speech recognition error: {e}")
-    except Exception as e:
-        st.error(f"Microphone error: {e}. Please check browser permissions.")
-    return ""
+# ── Chat input (always rendered last → sticks to bottom naturally) ───────────
+pending = st.session_state.pop("voice_pending", None) if "voice_pending" in st.session_state else None
+user_input = st.chat_input("Message AI Career Advisor…")
+if pending:
+    user_input = pending
 
-# ✅ Hidden Voice Trigger
-with st.container():
-    st.markdown('<div class="hidden-btn">', unsafe_allow_html=True)
-    voice_clicked = st.button("VoiceTrigger", key="voice_trigger_btn")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ✅ Chat Input
-user_input = st.chat_input("Type your message here (Shift+Enter for new line)...")
-
-# Handle voice input
-if voice_clicked:
-    voice_text = transcribe_voice()
-    if voice_text:
-        st.session_state.voice_input = voice_text
-
-# Handle voice input
-if "voice_input" in st.session_state and st.session_state.voice_input:
-    user_input = st.session_state.voice_input
-    del st.session_state.voice_input
-
-# Handle quick input
-if "quick_input" in st.session_state and st.session_state.quick_input:
-    user_input = st.session_state.quick_input
-    del st.session_state.quick_input
-
+# ── Process message ───────────────────────────────────────────────────────────
 if user_input:
-    # Initialize new chat if needed
     if st.session_state.current_chat_id is None:
         create_new_chat()
-    
-    # Add user message
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    user_message = {
-        "role": "user",
-        "content": user_input,
-        "timestamp": timestamp
-    }
-    st.session_state.messages.append(user_message)
-    st.session_state.history_text += f"[{timestamp}] You: {user_input}\n\n"
-    
-    # Update chat title if this is the first message
+
+    ts = datetime.now().strftime("%b %d, %H:%M")
+
+    # Append & show user message
+    st.session_state.messages.append({"role": "user", "content": user_input, "timestamp": ts})
+    st.session_state.history_text += f"[{ts}] You: {user_input}\n\n"
+
     if len(st.session_state.messages) == 1:
-        title = generate_chat_title(user_input)
-        st.session_state.chat_history[st.session_state.current_chat_id]["title"] = title
-    
-    # Show typing indicator and get AI response
+        st.session_state.chat_history[st.session_state.current_chat_id]["title"] = generate_chat_title(user_input)
+
+    with st.chat_message("user"):
+        st.markdown(user_input)
+        st.markdown(f'<div class="msg-ts">{ts}</div>', unsafe_allow_html=True)
+
+    # AI response
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        message_placeholder.markdown("""
-        <div class="typing-indicator">
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.toast("🤔 AI Career Advisor is thinking...")
+        placeholder = st.empty()
+        placeholder.markdown(
+            '<div class="typing-row">'
+            '<div class="dot"></div>'
+            '<div class="dot d2"></div>'
+            '<div class="dot d3"></div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
         try:
-            # Get response from Gemini
             prompt = get_career_prompt(st.session_state.career_mode, user_input)
             response = model.generate_content(prompt)
-            bot_reply = response.text
             
-            # Display response with typing animation
-            message_placeholder.empty()
-            
-            # Simulate typing effect
-            display_text = ""
+            if not response or not response.text:
+                bot_reply = "I'm sorry, I couldn't generate a response. Please try again."
+            else:
+                bot_reply = response.text
+
+            placeholder.empty()
+            display = ""
             for char in bot_reply:
-                display_text += char
-                message_placeholder.markdown(display_text + "▌")
+                display += char
+                placeholder.markdown(display + "▌")
                 time.sleep(0.005)
-            
-            message_placeholder.markdown(display_text)
-            
-            # Add AI message
-            ai_message = {
-                "role": "assistant",
-                "content": bot_reply,
-                "timestamp": timestamp
-            }
-            st.session_state.messages.append(ai_message)
-            st.session_state.history_text += f"[{timestamp}] AI: {bot_reply}\n\n"
-            
+            placeholder.markdown(display)
+            st.markdown(f'<div class="msg-ts">{ts}</div>', unsafe_allow_html=True)
+
+            st.session_state.messages.append({"role": "assistant", "content": bot_reply, "timestamp": ts})
+            st.session_state.history_text += f"[{ts}] AI: {bot_reply}\n\n"
+
         except Exception as e:
-            message_placeholder.error(f"❌ Error: {str(e)}")
-    
-    # Save to chat history
-    if st.session_state.current_chat_id:
-        st.session_state.chat_history[st.session_state.current_chat_id]["messages"] = st.session_state.messages.copy()
-        st.session_state.chat_history[st.session_state.current_chat_id]["timestamp"] = datetime.now().isoformat()
-        save_chat_history_to_storage()
-    
+            placeholder.error(f"❌ {e}")
+
+    cid = st.session_state.current_chat_id
+    st.session_state.chat_history[cid]["messages"] = st.session_state.messages.copy()
+    st.session_state.chat_history[cid]["timestamp"] = datetime.now().isoformat()
     st.rerun()
 
-# ✅ Sync localStorage on every render
-save_chat_history_to_storage()
-
-# ✅ Smooth scroll + mic overlay JS
-st.markdown("""
-<script>
-// Auto-scroll to bottom of messages
-window.addEventListener('load', function() {
-    setTimeout(function() {
-        const el = document.querySelector('.messages-wrapper');
-        if (el) el.scrollTop = el.scrollHeight;
-        setupMicOverlay();
-    }, 600);
-});
-
-// Scroll on new messages & re-inject mic if needed
-const observer = new MutationObserver(function() {
-    const el = document.querySelector('.messages-wrapper');
-    if (el) el.scrollTop = el.scrollHeight;
-    setupMicOverlay();
-});
-
-// Setup Mic Overlay — injected into the chat input's inner form div
-function setupMicOverlay() {
-    if (document.querySelector('.mic-overlay-btn')) return;
-
-    // Target the inner <div> inside stChatInput so position:relative works
-    const chatInput = document.querySelector('div[data-testid="stChatInput"] > div');
-    if (!chatInput) return;
-
-    const micBtn = document.createElement('div');
-    micBtn.className = 'mic-overlay-btn';
-    micBtn.innerHTML = '🎤';
-    micBtn.title = 'Click to use voice input';
-
-    micBtn.onclick = function() {
-        micBtn.classList.add('listening');
-        // Find and click the hidden Streamlit VoiceTrigger button
-        const allBtns = window.parent.document.querySelectorAll('button');
-        for (let b of allBtns) {
-            if (b.innerText.trim() === 'VoiceTrigger') {
-                b.click();
-                break;
-            }
-        }
-        // Remove listening state after 5s fallback
-        setTimeout(() => micBtn.classList.remove('listening'), 5000);
-    };
-
-    chatInput.appendChild(micBtn);
-}
-
-setTimeout(function() {
-    const el = document.querySelector('.messages-wrapper');
-    if (el) observer.observe(el, { childList: true, subtree: true });
-    setupMicOverlay();
-}, 700);
-
-// Also retry injection after slight delay for slow Streamlit renders
-setTimeout(setupMicOverlay, 1500);
-setTimeout(setupMicOverlay, 3000);
-</script>
-""", unsafe_allow_html=True)
-
-# ✅ Footer
-st.markdown("""
-<div style="padding: 10px; text-align: center; color: #888; font-size: 0.8rem; margin-top: 10px;">
-    Built by Rajan with Prompt Engineering | Powered by Gemini
-</div>
-""", unsafe_allow_html=True)
+# ── Footer ─────────────────────────────────────────────────────────────────────
+st.markdown(
+    '<div style="text-align:center;color:#3a3a3a;font-size:0.7rem;padding:8px 0 4px 0;">'
+    'Built by Rajan · Powered by Gemini 1.5 Flash'
+    '</div>',
+    unsafe_allow_html=True,
+)
