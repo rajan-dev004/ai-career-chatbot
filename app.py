@@ -35,6 +35,10 @@ if "history_text" not in st.session_state:
     st.session_state.history_text = ""
 if "career_mode" not in st.session_state:
     st.session_state.career_mode = "general"
+if "is_generating" not in st.session_state:
+    st.session_state.is_generating = False
+if "current_prompt" not in st.session_state:
+    st.session_state.current_prompt = None
 
 # ── Inject CSS safely (avoids nth-child parser bug) ──────────────────────────
 def inject_css():
@@ -228,6 +232,18 @@ def inject_css():
         font-size: 0.8rem;
         border-radius: 8px;
     }
+    
+    /* ── Stop Button Styling ── */
+    .stButton > button[key="stop_btn"] {
+        background: #212121 !important;
+        color: #ececec !important;
+        border: 1px solid #404040 !important;
+        border-radius: 8px !important;
+        font-size: 0.85rem !important;
+        padding: 6px 12px !important;
+        margin: 0 auto !important;
+        display: block !important;
+    }
     """
     st.html(f"<style>{css}</style>")
 
@@ -356,7 +372,6 @@ with st.sidebar:
     inv_mode_map = {v: k for k, v in mode_map.items()}
     current_label = inv_mode_map.get(st.session_state.career_mode, "💬  General")
     
-    # Use index instead of key to avoid internal Streamlit KeyError
     mode_labels = list(mode_map.keys())
     try:
         default_idx = mode_labels.index(current_label)
@@ -411,7 +426,6 @@ if not st.session_state.messages:
             unsafe_allow_html=True,
         )
 
-    # Suggestion cards — 2 per row
     suggestions = [
         ("🗺️ Build a career roadmap",      "Create a 6-month roadmap to become a Data Scientist"),
         ("🔍 Analyse my skill gap",         "I know Python & SQL — what do I need for an ML Engineer role?"),
@@ -427,7 +441,6 @@ if not st.session_state.messages:
                 st.rerun()
 
 else:
-    # ── Display chat history ──────────────────────────────────────────────
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
@@ -435,31 +448,50 @@ else:
                 st.markdown(f'<div class="msg-ts">{msg["timestamp"]}</div>', unsafe_allow_html=True)
 
 
-# ── Chat input (always rendered last → sticks to bottom naturally) ───────────
+# ── Chat input ──────────────────────────────────────────────────────────────
 pending = st.session_state.pop("voice_pending", None) if "voice_pending" in st.session_state else None
 user_input = st.chat_input("Message AI Career Advisor…")
 if pending:
     user_input = pending
 
+# ── Stop button overlay (rendered ABOVE the input) ──────────────────────────
+if st.session_state.is_generating:
+    col_l, col_c, col_r = st.columns([1, 1, 1])
+    with col_c:
+        if st.button("⏹ Stop generating", key="stop_btn", use_container_width=True):
+            st.session_state.is_generating = False
+            st.session_state.current_prompt = None
+            st.rerun()
+
 # ── Process message ───────────────────────────────────────────────────────────
-if user_input:
+if user_input or st.session_state.current_prompt:
+    # If it's a fresh input, prepare it and rerun to show the stop button
+    if user_input and not st.session_state.is_generating:
+        st.session_state.current_prompt = user_input
+        st.session_state.is_generating = True
+        st.rerun()
+
+    # Now we are in the run where is_generating is True and we have a current_prompt
+    prompt_text = st.session_state.current_prompt
+    st.session_state.current_prompt = None # Clear it for the next check
+    
     if st.session_state.current_chat_id is None:
         create_new_chat()
 
     ts = datetime.now().strftime("%b %d, %H:%M")
 
     # Append & show user message
-    st.session_state.messages.append({"role": "user", "content": user_input, "timestamp": ts})
-    st.session_state.history_text += f"[{ts}] You: {user_input}\n\n"
+    st.session_state.messages.append({"role": "user", "content": prompt_text, "timestamp": ts})
+    st.session_state.history_text += f"[{ts}] You: {prompt_text}\n\n"
 
     if len(st.session_state.messages) == 1:
-        st.session_state.chat_history[st.session_state.current_chat_id]["title"] = generate_chat_title(user_input)
+        st.session_state.chat_history[st.session_state.current_chat_id]["title"] = generate_chat_title(prompt_text)
 
-    with st.chat_message("user"):
-        st.markdown(user_input)
-        st.markdown(f'<div class="msg-ts">{ts}</div>', unsafe_allow_html=True)
+    # Note: The above changes won't be visible until the next run OR we re-render here
+    # But since we are already past the message display loop, we need to show the new message manually
+    # or just let it naturally show up after the next rerun.
+    # To keep it smooth, let's just proceed to generation.
 
-    # AI response
     with st.chat_message("assistant"):
         st.toast("🤔 AI Career Advisor is thinking...")
         placeholder = st.empty()
@@ -472,8 +504,8 @@ if user_input:
             unsafe_allow_html=True,
         )
         try:
-            prompt = get_career_prompt(st.session_state.career_mode, user_input)
-            response = model.generate_content(prompt)
+            full_prompt = get_career_prompt(st.session_state.career_mode, prompt_text)
+            response = model.generate_content(full_prompt)
             
             if not response or not response.text:
                 bot_reply = "I'm sorry, I couldn't generate a response. Please try again."
@@ -495,6 +527,7 @@ if user_input:
         except Exception as e:
             placeholder.error(f"❌ {e}")
 
+    st.session_state.is_generating = False
     cid = st.session_state.current_chat_id
     st.session_state.chat_history[cid]["messages"] = st.session_state.messages.copy()
     st.session_state.chat_history[cid]["timestamp"] = datetime.now().isoformat()
@@ -503,7 +536,7 @@ if user_input:
 # ── Footer ─────────────────────────────────────────────────────────────────────
 st.markdown(
     '<div style="text-align:center;color:#3a3a3a;font-size:0.7rem;padding:8px 0 4px 0;">'
-    'Built by Rajan · Powered by Gemini 1.5 Flash'
+    'Built by Rajan · Powered by Gemini 2.5 Flash'
     '</div>',
     unsafe_allow_html=True,
 )
