@@ -1,3 +1,12 @@
+/**
+ * MessageBubble Component
+ * 
+ * Purpose: Renders an individual chat message bubble in the chat transcript.
+ * - Highlights code blocks and renders formatted Markdown for AI responses.
+ * - Displays a simple user icon or sparkles icon depending on who sent the message.
+ * - Includes a Copy-to-Clipboard button to copy message contents.
+ * - Uses Framer Motion for entering animations.
+ */
 'use client'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
@@ -25,7 +34,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={copy}
-      className="p-1.5 rounded-md text-[#55556a] hover:text-[#9898b0] hover:bg-white/[0.06] transition-all"
+      className="p-1.5 rounded-md text-textMuted hover:text-textSecondary hover:bg-bgHover transition-all"
       title="Copy message"
     >
       {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -49,7 +58,7 @@ export default function MessageBubble({ message, isStreaming, streamingText }: M
         'w-8 h-8 rounded-full shrink-0 flex items-center justify-center mt-0.5',
         isUser
           ? 'bg-gradient-to-br from-[#780206] to-[#061161]'
-          : 'bg-[#1e1e28] border border-white/[0.08]'
+          : 'bg-bgHover border border-borderSubtle'
       )}>
         {isUser
           ? <User className="w-4 h-4 text-white" />
@@ -63,7 +72,7 @@ export default function MessageBubble({ message, isStreaming, streamingText }: M
           'relative rounded-2xl px-4 py-3 text-sm leading-relaxed',
           isUser
             ? 'bg-gradient-to-br from-[#780206] to-[#061161] text-white rounded-tr-sm'
-            : 'bg-[#16161e] border border-white/[0.07] rounded-tl-sm'
+            : 'bg-bgCard border border-borderSubtle rounded-tl-sm'
         )}>
           {isUser ? (
             <p className="whitespace-pre-wrap">{content}</p>
@@ -87,7 +96,7 @@ export default function MessageBubble({ message, isStreaming, streamingText }: M
           'flex items-center gap-1.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity',
           isUser && 'flex-row-reverse'
         )}>
-          <span className="text-[10px] text-[#55556a]">{formatTimestamp(message.timestamp)}</span>
+          <span className="text-[10px] text-textMuted">{formatTimestamp(message.timestamp)}</span>
           {!isStreaming && <CopyButton text={content} />}
         </div>
       </div>

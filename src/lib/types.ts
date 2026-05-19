@@ -1,3 +1,13 @@
+/**
+ * TypeScript Type Definitions
+ * 
+ * Purpose: Defines core structural interfaces and types utilized throughout the application.
+ * - CareerMode: Represents the different chat categories (General advice, Roadmap development, Skill gap analysis, Job comparison, Portfolio project ideas).
+ * - Message: Represents a single dialogue entry in a chat (user prompt or assistant reply).
+ * - Chat: Represents a single, unified conversation session with an ID, title, timestamp, and array of messages.
+ * - ChatState: Describes the local state structure for useChat.
+ * - CAREER_MODES: A static array containing UI labels, descriptions, and icons for each career mode.
+ */
 export type CareerMode = 'general' | 'roadmap' | 'skill_gap' | 'comparison' | 'projects'
 
 export interface Message {

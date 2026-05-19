@@ -1,3 +1,12 @@
+/**
+ * ChatContainer Component
+ * 
+ * Purpose: Manages and displays the scrollable chat message list.
+ * - Displays the WelcomeScreen if there are no messages in the active chat.
+ * - Iterates over existing messages and renders each using the MessageBubble component.
+ * - Dynamically renders a TypingIndicator or a streaming MessageBubble while waiting for or receiving AI responses.
+ * - Automatically scrolls to the bottom of the chat container as new messages arrive.
+ */
 'use client'
 import { useEffect, useRef } from 'react'
 import { AnimatePresence } from 'framer-motion'
@@ -51,7 +60,7 @@ export default function ChatContainer({
                 />
               ) : (
                 <div key="typing" className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#1e1e28] border border-white/[0.08] flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-bgHover border border-borderSubtle flex items-center justify-center">
                     <span className="text-xs">✨</span>
                   </div>
                   <TypingIndicator />

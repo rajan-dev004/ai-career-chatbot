@@ -1,3 +1,13 @@
+/**
+ * useChat Custom Hook
+ * 
+ * Purpose: Centralized state management for chat sessions, message histories, and API communication.
+ * - Handles saving/loading chat history to and from localStorage to persist chats across reloads.
+ * - Manages CRUD actions for chats (creating a new chat, loading an existing one, deleting, and clearing all).
+ * - Handles sending user prompts to the '/api/chat' server endpoint.
+ * - Implements chunk-by-chunk reading of the server-side text response stream to support real-time typing/streaming.
+ * - Integrates AbortController to allow users to cancel/stop an ongoing streaming response.
+ */
 'use client'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { v4 as uuidv4 } from 'uuid'

@@ -1,3 +1,17 @@
+/*
+ * Global CSS Stylesheet
+ * 
+ * Purpose: Sets up base styling, utility classes, and custom variables for the entire app.
+ * - Imports Google Fonts (Inter for UI, JetBrains Mono for code snippets).
+ * - Imports standard Tailwind CSS core layers.
+ * - Defines dark mode theme variables (:root variables for backgrounds, borders, and text).
+ * - Customizes scrollbar behaviors and text selection overlays.
+ * - Defines custom styled classes:
+ *   - .glass & .glass-hover: Glassmorphism effects.
+ *   - .prose-ai: Custom styling parameters for HTML markdown (headers, tables, lists, code blocks).
+ *   - .cursor-blink: Blink animation for real-time text streaming.
+ *   - .gradient-text: High-end text gradients.
+ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @tailwind base;
 @tailwind components;
@@ -8,14 +22,87 @@
   --bg-sidebar:    #0d0d14;
   --bg-card:       #16161e;
   --bg-input:      #1a1a24;
+  --bg-hover:      #1e1e28;
   --border-subtle: rgba(255,255,255,0.07);
   --border-hover:  rgba(255,255,255,0.15);
-  --accent:        #780206;
-  --accent-light:  #e02424;
+  --accent:        #6b292b;
+  --accent-light:  #920404;
   --text-1:        #f0f0f5;
   --text-2:        #9898b0;
   --text-3:        #55556a;
   --scrollbar-w:   6px;
+}
+
+html.light {
+  --bg-base:       #f8fafc;
+  --bg-sidebar:    #f1f5f9;
+  --bg-card:       #ffffff;
+  --bg-input:      #f1f5f9;
+  --bg-hover:      #e2e8f0;
+  --border-subtle: rgba(15,23,42,0.08);
+  --border-hover:  rgba(15,23,42,0.16);
+  --accent:        #9b1c1c;
+  --accent-light:  #c81e1e;
+  --text-1:        #0f172a;
+  --text-2:        #475569;
+  --text-3:        #64748b;
+}
+
+/* Light mode specific element overrides */
+html.light .glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-subtle);
+}
+
+html.light .glass-hover:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--border-hover);
+}
+
+html.light .prose-ai pre {
+  background: #f1f5f9 !important;
+}
+
+html.light .prose-ai code:not(pre code) {
+  background: rgba(99, 102, 241, 0.08);
+  color: #4f46e5;
+}
+
+/* Light mode syntax highlighting colors */
+html.light .hljs {
+  color: #24292e;
+  background: #f6f8fa;
+}
+html.light .hljs-keyword,
+html.light .hljs-operator {
+  color: #d73a49;
+}
+html.light .hljs-pattern-match {
+  color: #24292e;
+}
+html.light .hljs-string {
+  color: #032f62;
+}
+html.light .hljs-variable,
+html.light .hljs-template-variable {
+  color: #e36209;
+}
+html.light .hljs-comment {
+  color: #6a737d;
+}
+html.light .hljs-number,
+html.light .hljs-preprocessor,
+html.light .hljs-built_in,
+html.light .hljs-literal,
+html.light .hljs-member,
+html.light .hljs-symbol,
+html.light .hljs-bullet {
+  color: #005cc5;
+}
+html.light .hljs-title,
+html.light .hljs-section,
+html.light .hljs-name {
+  color: #6f42c1;
 }
 
 * { box-sizing: border-box; }
@@ -114,7 +201,7 @@ html, body {
 
 /* ── Gradient text ── */
 .gradient-text {
-  background: linear-gradient(135deg, #780206, #061161);
+  background: linear-gradient(135deg, #780206, #091db8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

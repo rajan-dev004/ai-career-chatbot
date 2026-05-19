@@ -1,3 +1,12 @@
+/**
+ * ChatInputBar Component
+ * 
+ * Purpose: Handles the user text input area at the bottom of the chat view.
+ * - Manages the auto-resizing text field (textarea) that expands as the user types.
+ * - Includes a Career Mode selector dropdown allowing the user to switch the context of the chat (e.g., General, Roadmap, Projects).
+ * - Toggles between a Send button and a Stop (Square) button depending on whether the AI is currently streaming a response.
+ * - Handles keyboard shortcuts like Enter (to submit) and Shift+Enter (to type a new line).
+ */
 'use client'
 import { useState, useRef, useEffect, KeyboardEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -58,10 +67,10 @@ export default function ChatInputBar({
   const activeMode = CAREER_MODES.find(m => m.value === careerMode)!
 
   return (
-    <div className="border-t border-white/[0.07] bg-[#0a0a0f]/80 backdrop-blur-xl px-4 py-3">
+    <div className="border-t border-borderSubtle bg-bgBase/80 backdrop-blur-xl px-4 py-3">
       <div className="max-w-3xl mx-auto space-y-2">
         {/* Input container */}
-        <div className="relative flex items-end gap-2 rounded-2xl bg-[#16161e] border border-white/[0.09] px-3 py-2.5 focus-within:border-[#780206]/50 transition-colors duration-200">
+        <div className="relative flex items-end gap-2 rounded-2xl bg-bgCard border border-borderSubtle px-3 py-2.5 focus-within:border-[#780206]/50 transition-colors duration-200">
 
           {/* Career mode chip */}
           <div className="relative shrink-0 self-end mb-0.5">
@@ -81,23 +90,23 @@ export default function ChatInputBar({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-0 mb-2 z-50 w-52 rounded-xl bg-[#1e1e28] border border-white/[0.1] shadow-xl overflow-hidden"
+                  className="absolute bottom-full left-0 mb-2 z-50 w-52 rounded-xl bg-bgHover border border-borderSubtle shadow-xl overflow-hidden"
                 >
                   {CAREER_MODES.map(m => (
                     <button
                       key={m.value}
                       onClick={() => { onModeChange(m.value); setModeOpen(false) }}
                       className={cn(
-                        'w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-white/[0.05] transition-colors',
+                        'w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-bgHover transition-colors',
                         careerMode === m.value && 'bg-[#780206]/15'
                       )}
                     >
                       <span className="text-base">{m.icon}</span>
                       <div>
-                        <p className={cn('text-xs font-medium', careerMode === m.value ? 'text-red-300' : 'text-[#c8c8d8]')}>
+                        <p className={cn('text-xs font-medium', careerMode === m.value ? 'text-red-300' : 'text-textSecondary')}>
                           {m.label}
                         </p>
-                        <p className="text-[10px] text-[#55556a] mt-0.5">{m.description}</p>
+                        <p className="text-[10px] text-textMuted mt-0.5">{m.description}</p>
                       </div>
                     </button>
                   ))}
@@ -114,13 +123,13 @@ export default function ChatInputBar({
             onKeyDown={handleKey}
             placeholder={`Ask anything about your career… (${activeMode.label} mode)`}
             rows={1}
-            className="flex-1 bg-transparent text-sm text-[#f0f0f5] placeholder-[#55556a] resize-none outline-none leading-relaxed py-1 max-h-44"
+            className="flex-1 bg-transparent text-sm text-textPrimary placeholder-textMuted resize-none outline-none leading-relaxed py-1 max-h-44"
           />
 
           {/* Action buttons */}
           <div className="flex items-center gap-1 shrink-0 self-end mb-0.5">
             {/* Mic */}
-            <button className="p-1.5 rounded-lg text-[#55556a] hover:text-[#9898b0] hover:bg-white/[0.05] transition-all">
+            <button className="p-1.5 rounded-lg text-textMuted hover:text-textSecondary hover:bg-bgHover transition-all">
               <Mic className="w-4 h-4" />
             </button>
 
@@ -142,7 +151,7 @@ export default function ChatInputBar({
                   'p-2 rounded-lg transition-all duration-200',
                   text.trim()
                     ? 'bg-gradient-to-br from-[#780206] to-[#061161] text-white shadow-md shadow-[#780206]/30 hover:shadow-[#780206]/50'
-                    : 'bg-white/[0.05] text-[#55556a] cursor-not-allowed'
+                    : 'bg-bgHover/40 text-textMuted cursor-not-allowed'
                 )}
               >
                 <Send className="w-4 h-4" />
@@ -152,9 +161,9 @@ export default function ChatInputBar({
         </div>
 
         {/* Hint */}
-        <p className="text-center text-[10px] text-[#55556a]">
-          Press <kbd className="px-1 py-0.5 rounded bg-white/[0.06] font-mono text-[9px]">Enter</kbd> to send
-          · <kbd className="px-1 py-0.5 rounded bg-white/[0.06] font-mono text-[9px]">Shift+Enter</kbd> for new line
+        <p className="text-center text-[10px] text-textMuted">
+          Press <kbd className="px-1 py-0.5 rounded bg-bgHover font-mono text-[9px]">Enter</kbd> to send
+          · <kbd className="px-1 py-0.5 rounded bg-bgHover font-mono text-[9px]">Shift+Enter</kbd> for new line
         </p>
       </div>
     </div>

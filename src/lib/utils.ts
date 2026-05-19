@@ -1,3 +1,12 @@
+/**
+ * Utility Helpers
+ * 
+ * Purpose: Provides helper functions used across the application.
+ * - cn(...): Combines classes conditionally (clsx) and handles Tailwind CSS overrides/conflicts (tailwind-merge).
+ * - formatTimestamp(iso): Formats an ISO date string into a user-friendly timestamp (e.g., "10:30 AM").
+ * - formatDateLabel(iso): Formats an ISO date string into relative terms (e.g., "Today", "Yesterday", or "3 days ago").
+ * - generateChatTitle(firstMessage): Generates a concise title from the user's initial message to label the chat session in the sidebar.
+ */
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 

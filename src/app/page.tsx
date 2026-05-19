@@ -1,3 +1,12 @@
+/**
+ * HomePage Component
+ * 
+ * Purpose: Main dashboard layout container that mounts the core UI components.
+ * - Imports and invokes the useChat custom hook to manage state & messaging.
+ * - Displays a responsive sidebar (Sidebar) which is hidden or rendered via slide-out drawer on mobile viewports.
+ * - Integrates the scrollable chat display (ChatContainer) and the bottom input bar (ChatInputBar).
+ * - Manages sidebar drawer open/close states (mobileOpen) and handles click suggestions from features cards.
+ */
 'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -27,7 +36,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0a0a0f]">
+    <div className="flex h-screen overflow-hidden bg-bgBase">
 
       {/* ── Desktop Sidebar ── */}
       <div className="hidden md:flex">
@@ -65,7 +74,7 @@ export default function HomePage() {
               />
               <button
                 onClick={() => setMobileOpen(false)}
-                className="mt-4 ml-1 p-1.5 rounded-full bg-[#1e1e28] border border-white/10 text-[#9898b0] hover:text-white self-start"
+                className="mt-4 ml-1 p-1.5 rounded-full bg-bgHover border border-borderSubtle text-textSecondary hover:text-textPrimary self-start"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -78,10 +87,10 @@ export default function HomePage() {
       <div className="flex flex-col flex-1 min-w-0 h-full">
 
         {/* Top bar (mobile only) */}
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] bg-[#0d0d14]">
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-borderSubtle bg-bgSidebar">
           <button
             onClick={() => setMobileOpen(true)}
-            className="p-2 rounded-lg text-[#9898b0] hover:text-white hover:bg-white/[0.05] transition-all"
+            className="p-2 rounded-lg text-textSecondary hover:text-textPrimary hover:bg-bgHover transition-all"
           >
             <Menu className="w-5 h-5" />
           </button>

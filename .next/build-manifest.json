@@ -5,22 +5,22 @@
   "devFiles": [],
   "ampDevFiles": [],
   "polyfillFiles": [
-    "static/chunks/ee3ba_next_dist_build_polyfills_polyfill-nomodule.js"
+    "static/chunks/28d5f_next_dist_build_polyfills_polyfill-nomodule.js"
   ],
   "lowPriorityFiles": [
     "static/development/_ssgManifest.js",
     "static/development/_buildManifest.js"
   ],
   "rootMainFiles": [
-    "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_06a2930e._.js",
-    "static/chunks/ee3ba_next_dist_compiled_react-dom_d0dd426a._.js",
-    "static/chunks/ee3ba_next_dist_compiled_next-devtools_index_80a58f98.js",
-    "static/chunks/ee3ba_next_dist_compiled_0c821ce6._.js",
-    "static/chunks/ee3ba_next_dist_client_a1438c42._.js",
-    "static/chunks/ee3ba_next_dist_b5f3c5c6._.js",
-    "static/chunks/ee3ba_@swc_helpers_cjs_19c23a5b._.js",
-    "static/chunks/Desktop_AI career Draft cursor ai_AI Career Chatbot_a0ff3932._.js",
-    "static/chunks/turbopack-Desktop_AI career Draft cursor ai_AI Career Chatbot_1745abeb._.js"
+    "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_f2cc8ce3._.js",
+    "static/chunks/28d5f_next_dist_compiled_react-dom_f0b2e944._.js",
+    "static/chunks/28d5f_next_dist_compiled_next-devtools_index_4515b8f2.js",
+    "static/chunks/28d5f_next_dist_compiled_e7f44b0b._.js",
+    "static/chunks/28d5f_next_dist_client_69dba0ef._.js",
+    "static/chunks/28d5f_next_dist_ff77f81f._.js",
+    "static/chunks/28d5f_@swc_helpers_cjs_cec91933._.js",
+    "static/chunks/Desktop_AI career JS and Streamlit_AI Career Chatbot_a0ff3932._.js",
+    "static/chunks/turbopack-Desktop_AI career JS and Streamlit_AI Career Chatbot_a09cb394._.js"
   ],
   "ampFirstPages": []
 }

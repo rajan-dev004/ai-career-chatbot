@@ -1,3 +1,11 @@
+/**
+ * Prompt Configurations
+ * 
+ * Purpose: Stores and dynamically constructs the custom system prompts for different career modes.
+ * - BASE_PROMPT: Sets the AI assistant's persona as an expert career counselor and specifies output markdown formatting rules.
+ * - CAREER_PROMPTS: Maps specific instructions for each career mode (roadmap structure, skill gaps, comparison criteria, and portfolio ideas).
+ * - getCareerPrompt: Merges the mode-specific prompt with the user's input before sending it to the Gemini API.
+ */
 import type { CareerMode } from './types'
 
 const BASE_PROMPT = `You are an expert career guidance counselor and AI assistant specialized in career development, skills assessment, and professional growth. Provide detailed, actionable, and personalized advice. Format your responses with proper markdown: use **bold**, ## headers, bullet lists, and numbered steps for clarity. Be concise but comprehensive.`

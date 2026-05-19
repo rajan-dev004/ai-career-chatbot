@@ -1,3 +1,13 @@
+/**
+ * POST /api/chat - Route Handler
+ * 
+ * Purpose: Next.js API Route handler that securely handles chatbot requests.
+ * - Extracts message and career mode parameters from the client's HTTP request body.
+ * - Validates API key and request parameters.
+ * - Calls the Google Generative AI SDK using the 'gemini-flash-latest' model.
+ * - Creates a dynamic prompt based on the selected CareerMode.
+ * - Spawns a ReadableStream to stream the text blocks from the Gemini API back to the client in real-time.
+ */
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest } from 'next/server'
 import { getCareerPrompt } from '@/lib/prompts'
