@@ -19,7 +19,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$AI__career__JS__a
 ;
 ;
 const metadata = {
-    title: 'AI Career Guidance',
+    title: 'AI Career Guidance — Excel Your Career',
     description: 'Personalized AI-powered career guidance, roadmaps, skill gap analysis, and project recommendations.',
     keywords: [
         'career guidance',
