@@ -1,22 +1,36 @@
 /**
  * MessageBubble Component
- * 
+ *
  * Purpose: Renders an individual chat message bubble in the chat transcript.
- * - Highlights code blocks and renders formatted Markdown for AI responses.
+ * - Uses markdown-it + highlight.js for markdown rendering (CJS-compatible, no ESM hang).
  * - Displays a simple user icon or sparkles icon depending on who sent the message.
  * - Includes a Copy-to-Clipboard button to copy message contents.
  * - Uses Framer Motion for entering animations.
  */
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
+import MarkdownIt from 'markdown-it'
+import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 import { Copy, Check, User, Sparkles } from 'lucide-react'
 import { cn, formatTimestamp } from '@/lib/utils'
 import type { Message } from '@/lib/types'
+
+// Configure markdown-it with highlight.js
+const md = new MarkdownIt({
+  html: false,
+  linkify: true,
+  typographer: true,
+  highlight: (str: string, lang: string) => {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return `<pre><code class="hljs language-${lang}">${hljs.highlight(str, { language: lang, ignoreIllegals: true }).value}</code></pre>`
+      } catch {}
+    }
+    return `<pre><code class="hljs">${md.utils.escapeHtml(str)}</code></pre>`
+  },
+})
 
 interface MessageBubbleProps {
   message: Message
@@ -39,6 +53,25 @@ function CopyButton({ text }: { text: string }) {
     >
       {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
+  )
+}
+
+function MarkdownContent({ content, isStreaming }: { content: string; isStreaming?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.innerHTML = md.render(content)
+    }
+  }, [content])
+
+  return (
+    <>
+      <div ref={ref} className="prose-ai" />
+      {isStreaming && (
+        <span className="inline-block w-0.5 h-4 bg-red-400 ml-0.5 cursor-blink align-middle" />
+      )}
+    </>
   )
 }
 
@@ -77,17 +110,7 @@ export default function MessageBubble({ message, isStreaming, streamingText }: M
           {isUser ? (
             <p className="whitespace-pre-wrap">{content}</p>
           ) : (
-            <div className="prose-ai">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeHighlight]}
-              >
-                {content}
-              </ReactMarkdown>
-              {isStreaming && (
-                <span className="inline-block w-0.5 h-4 bg-red-400 ml-0.5 cursor-blink align-middle" />
-              )}
-            </div>
+            <MarkdownContent content={content} isStreaming={isStreaming} />
           )}
         </div>
 

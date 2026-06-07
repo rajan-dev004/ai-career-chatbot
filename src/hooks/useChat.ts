@@ -10,7 +10,7 @@
  */
 'use client'
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { v4 as uuidv4 } from 'uuid'
+const uuidv4 = () => crypto.randomUUID()
 import type { Chat, Message, CareerMode } from '@/lib/types'
 import { generateChatTitle } from '@/lib/utils'
 
