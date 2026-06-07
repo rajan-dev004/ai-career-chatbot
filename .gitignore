@@ -25,3 +25,5 @@ Thumbs.db
 # Streamlit
 .streamlit/
 node_modules
+.next
+.next/
