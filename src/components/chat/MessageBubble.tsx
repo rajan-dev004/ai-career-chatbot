@@ -18,7 +18,7 @@ import { cn, formatTimestamp } from '@/lib/utils'
 import type { Message } from '@/lib/types'
 
 // Configure markdown-it with highlight.js
-const md = new MarkdownIt({
+const md: MarkdownIt = new MarkdownIt({
   html: false,
   linkify: true,
   typographer: true,
