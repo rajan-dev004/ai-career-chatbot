@@ -78,7 +78,7 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#780206]/10 border border-[#780206]/20 text-red-400 text-xs font-medium mb-4">
             <MessageCircle className="w-3.5 h-3.5" />
-            AI-Powered Career Guidance
+            AI-Career Guidance Chatbot
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">
             <span className="gradient-text">Excel Your Career</span>
