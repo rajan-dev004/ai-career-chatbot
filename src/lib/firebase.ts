@@ -10,12 +10,12 @@ import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAwDYBWdtB8LEfDuqKXykA3D-YSv6aUimk",
+  apiKey: "AIzaSyAwDYBWdtB8lEfbUqKXyKA3D-YSv6aUimk",
   authDomain: "ai-career-chatbot.firebaseapp.com",
   projectId: "ai-career-chatbot",
   storageBucket: "ai-career-chatbot.firebasestorage.app",
-  messagingSenderId: "340005341854",
-  appId: "1:340005341854:web:1d37f0f7ab17475f4ee18f",
+  messagingSenderId: "360005341854",
+  appId: "1:360005341854:web:1637f0f7ab19475f4ee18f",
   measurementId: "G-KKXF0TH1KR",
 }
 
