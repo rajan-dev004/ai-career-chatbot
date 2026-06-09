@@ -31,10 +31,11 @@ export default function LoginPage() {
     try {
       await signInWithGoogle()
     } catch (err) {
+      console.error('Sign in error:', err)
       const message = (err as Error).message
       // Don't show error for user-cancelled popup
       if (!message.includes('popup-closed-by-user') && !message.includes('cancelled-popup-request')) {
-        setError('Sign in failed. Please try again.')
+        setError(`Sign in failed: ${message}`)
       }
     } finally {
       setIsSigningIn(false)
