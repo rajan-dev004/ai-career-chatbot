@@ -12,8 +12,9 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, MessageSquare, Trash2, ChevronLeft, ChevronRight,
-  Sparkles, Trophy, Search, X, Sun, Moon
+  Sparkles, Trophy, Search, X, Sun, Moon, LogOut
 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import { cn, formatDateLabel } from '@/lib/utils'
 import type { Chat } from '@/lib/types'
 
@@ -29,6 +30,7 @@ interface SidebarProps {
 export default function Sidebar({
   chats, currentChatId, onNewChat, onLoadChat, onDeleteChat, onClearAll
 }: SidebarProps) {
+  const { user, logout } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
   const [search, setSearch]       = useState('')
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -201,13 +203,34 @@ export default function Sidebar({
 
         {/* Compact Theme Toggle (when collapsed) */}
         {collapsed && (
-          <div className="mt-auto px-2 py-3 flex justify-center border-t border-borderSubtle">
+          <div className="mt-auto px-2 py-3 flex flex-col items-center gap-2 border-t border-borderSubtle">
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt={user.displayName ?? 'User'}
+                className="w-7 h-7 rounded-full ring-2 ring-[#780206]/30"
+                referrerPolicy="no-referrer"
+                title={user.displayName ?? 'User'}
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#780206] to-[#061161] flex items-center justify-center text-white text-xs font-bold"
+                title={user?.displayName ?? 'User'}>
+                {(user?.displayName ?? user?.email ?? 'U').charAt(0).toUpperCase()}
+              </div>
+            )}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-textMuted hover:text-textSecondary hover:bg-bgHover transition-all"
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
               {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+            </button>
+            <button
+              onClick={logout}
+              className="p-2 rounded-lg text-textMuted hover:text-red-400 hover:bg-red-500/10 transition-all"
+              title="Sign Out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
@@ -236,6 +259,41 @@ export default function Sidebar({
               >
                 {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-indigo-400" />}
                 <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+              </button>
+
+              {/* User profile */}
+              {user && (
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-bgHover/50 border border-borderSubtle">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName ?? 'User'}
+                      className="w-7 h-7 rounded-full shrink-0 ring-2 ring-[#780206]/30"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#780206] to-[#061161] flex items-center justify-center shrink-0 text-white text-xs font-bold">
+                      {(user.displayName ?? user.email ?? 'U').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-textSecondary truncate">
+                      {user.displayName ?? 'User'}
+                    </p>
+                    <p className="text-[10px] text-textMuted truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Sign out button */}
+              <button
+                onClick={logout}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-textMuted hover:text-red-400 hover:bg-red-500/10 transition-all"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
               </button>
 
               <div className="flex items-center gap-2 px-3 py-1.5">

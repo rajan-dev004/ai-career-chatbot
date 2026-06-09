@@ -1,9 +1,10 @@
 /**
- * useChat Custom Hook
+ * useChat Custom Hook — Firestore-backed
  * 
  * Purpose: Centralized state management for chat sessions, message histories, and API communication.
- * - Handles saving/loading chat history to and from localStorage to persist chats across reloads.
- * - Manages CRUD actions for chats (creating a new chat, loading an existing one, deleting, and clearing all).
+ * - Loads and persists all chat data in Firestore under `users/{userId}/chats/{chatId}`.
+ * - Uses onSnapshot for real-time sync across tabs/devices.
+ * - Handles CRUD actions for chats (creating a new chat, loading an existing one, deleting, and clearing all).
  * - Handles sending user prompts to the '/api/chat' server endpoint.
  * - Implements chunk-by-chunk reading of the server-side text response stream to support real-time typing/streaming.
  * - Integrates AbortController to allow users to cancel/stop an ongoing streaming response.
@@ -13,26 +14,20 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 const uuidv4 = () => crypto.randomUUID()
 import type { Chat, Message, CareerMode } from '@/lib/types'
 import { generateChatTitle } from '@/lib/utils'
+import { db } from '@/lib/firebase'
+import {
+  collection, doc, setDoc, deleteDoc,
+  onSnapshot, query, orderBy, writeBatch,
+} from 'firebase/firestore'
 
-const STORAGE_KEY = 'ai_career_chats'
-
-function loadChats(): Record<string, Chat> {
-  if (typeof window === 'undefined') return {}
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : {}
-  } catch {
-    return {}
-  }
+/**
+ * Returns the Firestore collection reference for a user's chats.
+ */
+function userChatsRef(userId: string) {
+  return collection(db, 'users', userId, 'chats')
 }
 
-function saveChats(chats: Record<string, Chat>) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(chats))
-  } catch {}
-}
-
-export function useChat() {
+export function useChat(userId: string) {
   const [chats, setChats] = useState<Record<string, Chat>>({})
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
@@ -40,14 +35,47 @@ export function useChat() {
   const [careerMode, setCareerMode] = useState<CareerMode>('general')
   const abortRef = useRef<AbortController | null>(null)
 
-  // Load from localStorage on mount
-  useEffect(() => { setChats(loadChats()) }, [])
+  // Real-time sync from Firestore
+  useEffect(() => {
+    if (!userId) return
 
-  // Persist on every change
-  useEffect(() => { saveChats(chats) }, [chats])
+    const q = query(userChatsRef(userId), orderBy('timestamp', 'desc'))
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const loaded: Record<string, Chat> = {}
+      snapshot.docs.forEach((docSnap) => {
+        const data = docSnap.data()
+        loaded[docSnap.id] = {
+          id: docSnap.id,
+          title: data.title ?? 'New Chat',
+          timestamp: data.timestamp ?? new Date().toISOString(),
+          messages: data.messages ?? [],
+          mode: data.mode ?? 'general',
+        }
+      })
+      setChats(loaded)
+    }, (error) => {
+      console.error('Firestore sync error:', error)
+    })
+
+    return () => unsubscribe()
+  }, [userId])
 
   const currentChat = currentChatId ? chats[currentChatId] ?? null : null
   const messages: Message[] = currentChat?.messages ?? []
+
+  /**
+   * Persist a chat document to Firestore.
+   */
+  const saveChat = useCallback(async (chat: Chat) => {
+    if (!userId) return
+    const docRef = doc(userChatsRef(userId), chat.id)
+    await setDoc(docRef, {
+      title: chat.title,
+      mode: chat.mode,
+      timestamp: chat.timestamp,
+      messages: chat.messages,
+    })
+  }, [userId])
 
   const createNewChat = useCallback(() => {
     const id = uuidv4()
@@ -58,31 +86,51 @@ export function useChat() {
       messages: [],
       mode: careerMode,
     }
+    // Optimistic local update; Firestore will sync via onSnapshot
     setChats(prev => ({ ...prev, [id]: newChat }))
     setCurrentChatId(id)
     setStreamingText('')
+    saveChat(newChat)
     return id
-  }, [careerMode])
+  }, [careerMode, saveChat])
 
   const loadChat = useCallback((chatId: string) => {
     setCurrentChatId(chatId)
     setStreamingText('')
   }, [])
 
-  const deleteChat = useCallback((chatId: string) => {
+  const deleteChat = useCallback(async (chatId: string) => {
+    // Optimistic local update
     setChats(prev => {
       const next = { ...prev }
       delete next[chatId]
       return next
     })
     setCurrentChatId(prev => (prev === chatId ? null : prev))
-  }, [])
 
-  const clearAllChats = useCallback(() => {
+    // Delete from Firestore
+    if (userId) {
+      const docRef = doc(userChatsRef(userId), chatId)
+      await deleteDoc(docRef)
+    }
+  }, [userId])
+
+  const clearAllChats = useCallback(async () => {
+    const chatIds = Object.keys(chats)
+    // Optimistic local update
     setChats({})
     setCurrentChatId(null)
     setStreamingText('')
-  }, [])
+
+    // Batch delete from Firestore
+    if (userId && chatIds.length > 0) {
+      const batch = writeBatch(db)
+      chatIds.forEach(id => {
+        batch.delete(doc(userChatsRef(userId), id))
+      })
+      await batch.commit()
+    }
+  }, [userId, chats])
 
   const sendMessage = useCallback(async (userInput: string) => {
     if (!userInput.trim() || isStreaming) return
@@ -123,10 +171,14 @@ export function useChat() {
       timestamp: new Date().toISOString(),
     }
 
+    // Optimistic local update
     setChats(prev => ({ ...prev, [chatId!]: updatedChat }))
     setCurrentChatId(chatId)
     setIsStreaming(true)
     setStreamingText('')
+
+    // Save user message to Firestore
+    saveChat(updatedChat)
 
     abortRef.current = new AbortController()
 
@@ -163,14 +215,19 @@ export function useChat() {
         mode: careerMode,
       }
 
+      const finalChat: Chat = {
+        ...updatedChat,
+        messages: [...updatedMessages, aiMsg],
+        timestamp: new Date().toISOString(),
+      }
+
       setChats(prev => ({
         ...prev,
-        [chatId!]: {
-          ...prev[chatId!],
-          messages: [...(prev[chatId!]?.messages ?? []), aiMsg],
-          timestamp: new Date().toISOString(),
-        },
+        [chatId!]: finalChat,
       }))
+
+      // Save AI response to Firestore
+      saveChat(finalChat)
     } catch (err) {
       if ((err as Error).name === 'AbortError') return
       const errMsg: Message = {
@@ -179,19 +236,21 @@ export function useChat() {
         content: `❌ **Error:** ${(err as Error).message}`,
         timestamp: new Date().toISOString(),
       }
+      const errorChat: Chat = {
+        ...updatedChat,
+        messages: [...updatedMessages, errMsg],
+      }
       setChats(prev => ({
         ...prev,
-        [chatId!]: {
-          ...prev[chatId!],
-          messages: [...(prev[chatId!]?.messages ?? []), errMsg],
-        },
+        [chatId!]: errorChat,
       }))
+      saveChat(errorChat)
     } finally {
       setIsStreaming(false)
       setStreamingText('')
       abortRef.current = null
     }
-  }, [currentChatId, chats, careerMode, isStreaming])
+  }, [currentChatId, chats, careerMode, isStreaming, saveChat])
 
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort()

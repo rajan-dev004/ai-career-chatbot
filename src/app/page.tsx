@@ -6,18 +6,30 @@
  * - Displays a responsive sidebar (Sidebar) which is hidden or rendered via slide-out drawer on mobile viewports.
  * - Integrates the scrollable chat display (ChatContainer) and the bottom input bar (ChatInputBar).
  * - Manages sidebar drawer open/close states (mobileOpen) and handles click suggestions from features cards.
+ * - Gates the chat UI behind Firebase authentication — unauthenticated users see the login page.
  */
 'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import { useChat } from '@/hooks/useChat'
 import Sidebar from '@/components/layout/Sidebar'
 import ChatContainer from '@/components/chat/ChatContainer'
 import ChatInputBar from '@/components/input/ChatInputBar'
+import LoginPage from '@/components/auth/LoginPage'
 import type { CareerMode } from '@/lib/types'
 
 export default function HomePage() {
+  const { user } = useAuth()
+
+  // Show login page if not authenticated
+  if (!user) return <LoginPage />
+
+  return <AuthenticatedApp userId={user.uid} />
+}
+
+function AuthenticatedApp({ userId }: { userId: string }) {
   const {
     chats, currentChatId, messages,
     isStreaming, streamingText,
@@ -25,7 +37,7 @@ export default function HomePage() {
     sendMessage, stopStreaming,
     createNewChat, loadChat,
     deleteChat, clearAllChats,
-  } = useChat()
+  } = useChat(userId)
 
   const [prefill, setPrefill]         = useState('')
   const [mobileOpen, setMobileOpen]   = useState(false)
@@ -119,3 +131,4 @@ export default function HomePage() {
     </div>
   )
 }
+
