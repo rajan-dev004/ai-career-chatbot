@@ -33,15 +33,46 @@ export function useChat(userId: string) {
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingText, setStreamingText] = useState('')
   const [careerMode, setCareerMode] = useState<CareerMode>('general')
+  const [isCloudSyncing, setIsCloudSyncing] = useState(true)
   const abortRef = useRef<AbortController | null>(null)
+
+  // Load initial chats from localStorage on client-side mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && userId) {
+      const cached = localStorage.getItem(`chats_${userId}`)
+      if (cached) {
+        try {
+          setChats(JSON.parse(cached))
+        } catch (e) {
+          console.error('Error parsing cached chats on mount:', e)
+        }
+      }
+    }
+  }, [userId])
 
   // Real-time sync from Firestore
   useEffect(() => {
     if (!userId) return
 
+    console.log(`[Telemetry] [ChatHook] Setting up Firestore subscription for user: ${userId}`);
+    const tSubStart = performance.now();
+    console.time(`[Telemetry] [ChatHook] Firestore First Snapshot Sync`);
+
+    let isFirstSnapshot = true;
     const q = query(userChatsRef(userId), orderBy('timestamp', 'desc'))
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      const duration = performance.now() - tSubStart;
+      if (isFirstSnapshot) {
+        console.log(`[Telemetry] [ChatHook] First snapshot returned ${snapshot.size} chats.`);
+        console.log(`[Telemetry] [ChatHook] Firestore initial sync took ${duration.toFixed(2)}ms`);
+        console.timeEnd(`[Telemetry] [ChatHook] Firestore First Snapshot Sync`);
+        isFirstSnapshot = false;
+      } else {
+        console.log(`[Telemetry] [ChatHook] Firestore snapshot update returned ${snapshot.size} chats. Callback in ${(performance.now() - tSubStart).toFixed(2)}ms`);
+      }
+
       const loaded: Record<string, Chat> = {}
+      const tProcessStart = performance.now();
       snapshot.docs.forEach((docSnap) => {
         const data = docSnap.data()
         loaded[docSnap.id] = {
@@ -52,9 +83,30 @@ export function useChat(userId: string) {
           mode: data.mode ?? 'general',
         }
       })
+      console.log(`[Telemetry] [ChatHook] Processed snapshot data in ${(performance.now() - tProcessStart).toFixed(2)}ms`);
+      
       setChats(loaded)
+      setIsCloudSyncing(true)
+
+      // Cache the synced chats locally
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`chats_${userId}`, JSON.stringify(loaded))
+      }
     }, (error) => {
-      console.error('Firestore sync error:', error)
+      console.error('Firestore sync error, falling back to local storage:', error)
+      setIsCloudSyncing(false)
+
+      // Load from localStorage as fallback when subscription fails
+      if (typeof window !== 'undefined') {
+        try {
+          const cached = localStorage.getItem(`chats_${userId}`)
+          if (cached) {
+            setChats(JSON.parse(cached))
+          }
+        } catch (e) {
+          console.error('Error parsing cached chats on sync error:', e)
+        }
+      }
     })
 
     return () => unsubscribe()
@@ -64,18 +116,42 @@ export function useChat(userId: string) {
   const messages: Message[] = currentChat?.messages ?? []
 
   /**
-   * Persist a chat document to Firestore.
+   * Persist a chat document to LocalStorage and Firestore.
    */
   const saveChat = useCallback(async (chat: Chat) => {
     if (!userId) return
-    const docRef = doc(userChatsRef(userId), chat.id)
-    await setDoc(docRef, {
-      title: chat.title,
-      mode: chat.mode,
-      timestamp: chat.timestamp,
-      messages: chat.messages,
-    })
-  }, [userId])
+
+    // 1. Always save to localStorage first as immediate local backup
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedStr = localStorage.getItem(`chats_${userId}`)
+        let localChats: Record<string, Chat> = {}
+        if (cachedStr) {
+          localChats = JSON.parse(cachedStr)
+        }
+        localChats[chat.id] = chat
+        localStorage.setItem(`chats_${userId}`, JSON.stringify(localChats))
+      } catch (e) {
+        console.error('Failed to save to localStorage:', e)
+      }
+    }
+
+    // 2. Try to save to Firestore if cloud syncing is active
+    if (isCloudSyncing) {
+      try {
+        const docRef = doc(userChatsRef(userId), chat.id)
+        await setDoc(docRef, {
+          title: chat.title,
+          mode: chat.mode,
+          timestamp: chat.timestamp,
+          messages: chat.messages,
+        })
+      } catch (err) {
+        console.error('Failed to write to Firestore, falling back to local-only:', err)
+        setIsCloudSyncing(false)
+      }
+    }
+  }, [userId, isCloudSyncing])
 
   const createNewChat = useCallback(() => {
     const id = uuidv4()
@@ -108,12 +184,33 @@ export function useChat(userId: string) {
     })
     setCurrentChatId(prev => (prev === chatId ? null : prev))
 
-    // Delete from Firestore
-    if (userId) {
-      const docRef = doc(userChatsRef(userId), chatId)
-      await deleteDoc(docRef)
+    if (!userId) return
+
+    // Delete from localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedStr = localStorage.getItem(`chats_${userId}`)
+        if (cachedStr) {
+          const localChats = JSON.parse(cachedStr)
+          delete localChats[chatId]
+          localStorage.setItem(`chats_${userId}`, JSON.stringify(localChats))
+        }
+      } catch (e) {
+        console.error('Failed to delete from localStorage:', e)
+      }
     }
-  }, [userId])
+
+    // Delete from Firestore
+    if (isCloudSyncing) {
+      try {
+        const docRef = doc(userChatsRef(userId), chatId)
+        await deleteDoc(docRef)
+      } catch (err) {
+        console.error('Failed to delete from Firestore:', err)
+        setIsCloudSyncing(false)
+      }
+    }
+  }, [userId, isCloudSyncing])
 
   const clearAllChats = useCallback(async () => {
     const chatIds = Object.keys(chats)
@@ -122,15 +219,31 @@ export function useChat(userId: string) {
     setCurrentChatId(null)
     setStreamingText('')
 
-    // Batch delete from Firestore
-    if (userId && chatIds.length > 0) {
-      const batch = writeBatch(db)
-      chatIds.forEach(id => {
-        batch.delete(doc(userChatsRef(userId), id))
-      })
-      await batch.commit()
+    if (!userId) return
+
+    // Clear from localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(`chats_${userId}`)
+      } catch (e) {
+        console.error('Failed to clear localStorage:', e)
+      }
     }
-  }, [userId, chats])
+
+    // Batch delete from Firestore
+    if (isCloudSyncing && chatIds.length > 0) {
+      try {
+        const batch = writeBatch(db)
+        chatIds.forEach(id => {
+          batch.delete(doc(userChatsRef(userId), id))
+        })
+        await batch.commit()
+      } catch (err) {
+        console.error('Failed to batch delete from Firestore:', err)
+        setIsCloudSyncing(false)
+      }
+    }
+  }, [userId, chats, isCloudSyncing])
 
   const sendMessage = useCallback(async (userInput: string) => {
     if (!userInput.trim() || isStreaming) return
@@ -177,12 +290,21 @@ export function useChat(userId: string) {
     setIsStreaming(true)
     setStreamingText('')
 
+    console.log('[Telemetry] [ChatHook] sendMessage initiated.');
+    const tSendStart = performance.now();
+    console.time('[Telemetry] [ChatHook] Total Chat Transaction');
+
     // Save user message to Firestore
-    saveChat(updatedChat)
+    const tSaveUserStart = performance.now();
+    await saveChat(updatedChat);
+    console.log(`[Telemetry] [ChatHook] Saved user message to Firestore in ${(performance.now() - tSaveUserStart).toFixed(2)}ms`);
 
     abortRef.current = new AbortController()
 
     try {
+      console.log('[Telemetry] [ChatHook] Sending POST request to /api/chat...');
+      const tFetchStart = performance.now();
+      
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -190,22 +312,35 @@ export function useChat(userId: string) {
         signal: abortRef.current.signal,
       })
 
+      const fetchLatency = performance.now() - tFetchStart;
+      console.log(`[Telemetry] [ChatHook] /api/chat responded (status: ${res.status}) in ${fetchLatency.toFixed(2)}ms`);
+
       if (!res.ok || !res.body) {
         const err = await res.json().catch(() => ({ error: 'Stream failed' }))
         throw new Error(err.error ?? 'Request failed')
       }
 
+      console.log('[Telemetry] [ChatHook] Stream body received, reading stream...');
+      const tStreamStart = performance.now();
+      
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let fullText = ''
+      let isFirstChunk = true;
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
+        if (isFirstChunk) {
+          console.log(`[Telemetry] [ChatHook] Time to first token: ${(performance.now() - tStreamStart).toFixed(2)}ms`);
+          isFirstChunk = false;
+        }
         fullText += chunk
         setStreamingText(fullText)
       }
+
+      console.log(`[Telemetry] [ChatHook] Finished reading response stream. Stream read duration: ${(performance.now() - tStreamStart).toFixed(2)}ms`);
 
       const aiMsg: Message = {
         id: uuidv4(),
@@ -227,9 +362,16 @@ export function useChat(userId: string) {
       }))
 
       // Save AI response to Firestore
-      saveChat(finalChat)
+      const tSaveAiStart = performance.now();
+      await saveChat(finalChat)
+      console.log(`[Telemetry] [ChatHook] Saved AI response to Firestore in ${(performance.now() - tSaveAiStart).toFixed(2)}ms`);
+      console.log(`[Telemetry] [ChatHook] Total chat transaction completed in ${(performance.now() - tSendStart).toFixed(2)}ms`);
+      console.timeEnd('[Telemetry] [ChatHook] Total Chat Transaction');
     } catch (err) {
-      if ((err as Error).name === 'AbortError') return
+      if ((err as Error).name === 'AbortError') {
+        console.log('[Telemetry] [ChatHook] Chat streaming aborted by user.');
+        return
+      }
       const errMsg: Message = {
         id: uuidv4(),
         role: 'assistant',
@@ -244,7 +386,7 @@ export function useChat(userId: string) {
         ...prev,
         [chatId!]: errorChat,
       }))
-      saveChat(errorChat)
+      await saveChat(errorChat)
     } finally {
       setIsStreaming(false)
       setStreamingText('')
@@ -271,5 +413,6 @@ export function useChat(userId: string) {
     loadChat,
     deleteChat,
     clearAllChats,
+    isCloudSyncing,
   }
 }

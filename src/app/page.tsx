@@ -37,6 +37,7 @@ function AuthenticatedApp({ userId }: { userId: string }) {
     sendMessage, stopStreaming,
     createNewChat, loadChat,
     deleteChat, clearAllChats,
+    isCloudSyncing,
   } = useChat(userId)
 
   const [prefill, setPrefill]         = useState('')
@@ -59,6 +60,7 @@ function AuthenticatedApp({ userId }: { userId: string }) {
           onLoadChat={loadChat}
           onDeleteChat={deleteChat}
           onClearAll={clearAllChats}
+          isCloudSyncing={isCloudSyncing}
         />
       </div>
 
@@ -83,6 +85,7 @@ function AuthenticatedApp({ userId }: { userId: string }) {
                 onLoadChat={id => { loadChat(id); setMobileOpen(false) }}
                 onDeleteChat={deleteChat}
                 onClearAll={clearAllChats}
+                isCloudSyncing={isCloudSyncing}
               />
               <button
                 onClick={() => setMobileOpen(false)}

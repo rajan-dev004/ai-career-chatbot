@@ -110,10 +110,35 @@ export default function LoginPage() {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="flex items-center gap-2 px-3 py-2 mb-4 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400"
+              className="flex flex-col gap-2 p-4 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400"
             >
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              {error}
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold text-sm block">Sign In Blocked</span>
+                  {error.includes('requests-from-referer') ? (
+                    <div className="space-y-2 mt-1.5 text-[11px] leading-relaxed text-textSecondary">
+                      <p>
+                        Firebase is blocking authentication requests from your current URL because it is not added to the authorized domains list.
+                      </p>
+                      <div className="p-2 rounded bg-black/30 border border-borderSubtle font-mono text-[10px] text-textMuted">
+                        Current Origin: {typeof window !== 'undefined' ? window.location.origin : ''}
+                      </div>
+                      <p className="font-medium text-textPrimary">How to fix this:</p>
+                      <ol className="list-decimal pl-4 space-y-1">
+                        <li>
+                          Open the web app via <span className="font-semibold text-textPrimary text-xs underline">http://localhost:3000</span> (or port <span className="font-semibold text-textPrimary text-xs underline">3001</span>) instead of the local network IP address.
+                        </li>
+                        <li>
+                          Or, add your local IP/domain (<span className="font-mono text-red-300 bg-red-500/10 px-1 py-0.5 rounded">{typeof window !== 'undefined' ? window.location.hostname : '172.23.0.117'}</span>) to the <b>Authorized Domains</b> list in your Firebase Console &rarr; Authentication &rarr; Settings.
+                        </li>
+                      </ol>
+                    </div>
+                  ) : (
+                    <span className="leading-relaxed block mt-1">{error}</span>
+                  )}
+                </div>
+              </div>
             </motion.div>
           )}
 

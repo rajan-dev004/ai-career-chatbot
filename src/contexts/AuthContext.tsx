@@ -35,8 +35,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Profile auth resolution time
   useEffect(() => {
+    console.log('[Telemetry] [Auth] AuthProvider mounted.');
+    const tMount = performance.now();
+    console.time('[Telemetry] [Auth] Time to First Auth State');
+
+    let isFirstCallback = true;
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      const duration = performance.now() - tMount;
+      if (isFirstCallback) {
+        console.log(`[Telemetry] [Auth] First auth state resolved. Logged-in user: ${firebaseUser ? firebaseUser.email : 'None'}`);
+        console.log(`[Telemetry] [Auth] Time to first auth state took ${duration.toFixed(2)}ms`);
+        console.timeEnd('[Telemetry] [Auth] Time to First Auth State');
+        isFirstCallback = false;
+      } else {
+        console.log(`[Telemetry] [Auth] Auth state changed. User: ${firebaseUser ? firebaseUser.email : 'None'}`);
+      }
+      
       setUser(firebaseUser)
       setLoading(false)
     })
@@ -44,12 +60,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider()
-    await signInWithPopup(auth, provider)
+    console.log('[Telemetry] [Auth] Google Sign-In initiated.');
+    const tStart = performance.now();
+    console.time('[Telemetry] [Auth] Google Sign-In Flow');
+    try {
+      const provider = new GoogleAuthProvider()
+      await signInWithPopup(auth, provider)
+      console.log(`[Telemetry] [Auth] Google Sign-In succeeded in ${(performance.now() - tStart).toFixed(2)}ms`);
+    } catch (error) {
+      console.error(`[Telemetry] [Auth] Google Sign-In failed after ${(performance.now() - tStart).toFixed(2)}ms`, error);
+      throw error;
+    } finally {
+      console.timeEnd('[Telemetry] [Auth] Google Sign-In Flow');
+    }
   }
 
   const logout = async () => {
+    console.log('[Telemetry] [Auth] Sign-out initiated.');
+    const tStart = performance.now();
     await signOut(auth)
+    console.log(`[Telemetry] [Auth] Sign-out completed in ${(performance.now() - tStart).toFixed(2)}ms`);
   }
 
   // Loading screen while Firebase determines auth state

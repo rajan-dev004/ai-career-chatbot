@@ -25,15 +25,17 @@ interface SidebarProps {
   onLoadChat: (id: string) => void
   onDeleteChat: (id: string) => void
   onClearAll: () => void
+  isCloudSyncing: boolean
 }
 
 export default function Sidebar({
-  chats, currentChatId, onNewChat, onLoadChat, onDeleteChat, onClearAll
+  chats, currentChatId, onNewChat, onLoadChat, onDeleteChat, onClearAll, isCloudSyncing
 }: SidebarProps) {
   const { user, logout } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
   const [search, setSearch]       = useState('')
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [showStatusInfo, setShowStatusInfo] = useState(false)
 
   const [theme, setTheme] = useState<'light' | 'dark'>('dark')
 
@@ -90,6 +92,42 @@ export default function Sidebar({
             )}
           </AnimatePresence>
         </div>
+
+        {/* ── Storage Status Indicator ── */}
+        {!collapsed && (
+          <div className="px-3 pt-2">
+            <div className={cn(
+              "flex flex-col gap-1 px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-all duration-200",
+              isCloudSyncing 
+                ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400" 
+                : "bg-amber-500/5 border-amber-500/20 text-amber-400"
+            )}>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-1.5">
+                  <span className={cn(
+                    "w-1.5 h-1.5 rounded-full animate-pulse",
+                    isCloudSyncing ? "bg-emerald-400 shadow-sm shadow-emerald-400/50" : "bg-amber-400 shadow-sm shadow-amber-400/50"
+                  )} />
+                  <span>{isCloudSyncing ? 'Cloud Sync Active' : 'Saved Locally'}</span>
+                </div>
+                <button 
+                  onClick={() => setShowStatusInfo(!showStatusInfo)}
+                  className="underline opacity-75 hover:opacity-100 transition-opacity"
+                >
+                  {showStatusInfo ? 'Hide' : 'Info'}
+                </button>
+              </div>
+              {showStatusInfo && (
+                <p className="text-[9px] text-textMuted leading-relaxed border-t border-borderSubtle pt-1 mt-0.5">
+                  {isCloudSyncing 
+                    ? "Your conversations are backed up in your Firebase cloud database."
+                    : "Chats are saved to your browser because Firestore is not created in your Firebase Console. Go to Console -> Firestore to enable cloud sync."
+                  }
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── New Chat button ── */}
         <div className={cn('px-3 py-3', collapsed && 'px-2')}>
