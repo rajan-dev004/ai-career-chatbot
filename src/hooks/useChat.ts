@@ -36,6 +36,22 @@ export function useChat(userId: string) {
   const [isCloudSyncing, setIsCloudSyncing] = useState(true)
   const abortRef = useRef<AbortController | null>(null)
 
+  const chatsRef = useRef<Record<string, Chat>>({})
+  const currentChatIdRef = useRef<string | null>(null)
+  const lastCreatedEmptyChatIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    chatsRef.current = chats
+    // Clear pending ref if it is now in the chats state
+    if (lastCreatedEmptyChatIdRef.current && chats[lastCreatedEmptyChatIdRef.current]) {
+      lastCreatedEmptyChatIdRef.current = null
+    }
+  }, [chats])
+
+  useEffect(() => {
+    currentChatIdRef.current = currentChatId
+  }, [currentChatId])
+
   // Load initial chats from localStorage on client-side mount
   useEffect(() => {
     if (typeof window !== 'undefined' && userId) {
@@ -154,6 +170,26 @@ export function useChat(userId: string) {
   }, [userId, isCloudSyncing])
 
   const createNewChat = useCallback(() => {
+    // 1. Check if the current chat is already empty to prevent redundant empty chats
+    const activeId = currentChatIdRef.current
+    if (activeId) {
+      const activeChat = chatsRef.current[activeId]
+      if (activeChat && activeChat.messages.length === 0) {
+        return activeId
+      }
+    }
+
+    // 2. Prevent rapid multiple clicks creating multiple chats before state updates
+    const lastEmptyId = lastCreatedEmptyChatIdRef.current
+    if (lastEmptyId) {
+      const lastEmptyChat = chatsRef.current[lastEmptyId]
+      if (!lastEmptyChat || lastEmptyChat.messages.length === 0) {
+        setCurrentChatId(lastEmptyId)
+        setStreamingText('')
+        return lastEmptyId
+      }
+    }
+
     const id = uuidv4()
     const newChat: Chat = {
       id,
@@ -162,6 +198,9 @@ export function useChat(userId: string) {
       messages: [],
       mode: careerMode,
     }
+
+    lastCreatedEmptyChatIdRef.current = id
+
     // Optimistic local update; Firestore will sync via onSnapshot
     setChats(prev => ({ ...prev, [id]: newChat }))
     setCurrentChatId(id)

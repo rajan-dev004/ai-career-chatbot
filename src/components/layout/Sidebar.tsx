@@ -87,7 +87,7 @@ export default function Sidebar({
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden whitespace-nowrap"
               >
-                <span className="font-semibold text-sm gradient-text">Excel Your Career</span>
+                <span className="font-semibold text-sm gradient-text">AI Career Guide</span>
               </motion.div>
             )}
           </AnimatePresence>
