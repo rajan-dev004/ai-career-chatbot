@@ -67,7 +67,7 @@ const QUICK_PROMPTS = [
 
 export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
   return (
-    <div className="flex flex-col items-center w-full min-h-full px-4 py-6">
+    <div className="flex flex-col items-center w-full min-h-full px-2 py-2">
       <div className="my-auto flex flex-col items-center w-full">
         {/* Hero */}
         <motion.div
@@ -76,10 +76,7 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
           transition={{ duration: 0.5 }}
           className="text-center mb-10"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#780206]/10 border border-[#780206]/20 text-red-400 text-xs font-medium mb-4">
-            <MessageCircle className="w-3.5 h-3.5" />
-            AI-Career Guidance Chatbot
-          </div>
+
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">
             <span className="gradient-text">Excel Your Career</span>
           </h1>
