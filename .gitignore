@@ -27,3 +27,6 @@ Thumbs.db
 node_modules
 .next
 .next/
+
+# wrote it to ignore 
+next-dev-stdout.log
