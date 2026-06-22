@@ -80,36 +80,39 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">
             <span className="gradient-text">Excel Your Career</span>
           </h1>
-          <p className="text-[#9898b0] text-base max-w-md mx-auto leading-relaxed">
+          <p className="hidden md:block text-[#9898b0] text-base max-w-md mx-auto leading-relaxed">
             Your personal AI career counselor. Get roadmaps, skill analysis, job comparisons, and project ideas — all tailored to you.
           </p>
         </motion.div>
 
         {/* Feature cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl mb-8">
-          {FEATURES.map((feat, i) => (
-            <motion.button
-              key={feat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.07, duration: 0.4 }}
-              onClick={() => onSuggest(feat.prompt, feat.mode)}
-              className={`group text-left p-4 rounded-2xl bg-gradient-to-br ${feat.color} border ${feat.border} glass-hover transition-all duration-200 hover:scale-[1.02] hover:shadow-card`}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`mt-0.5 p-2 rounded-lg bg-white/5 ${feat.iconColor}`}>
-                  <feat.icon className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-sm text-textPrimary">{feat.title}</h3>
-                    <ArrowRight className="w-3.5 h-3.5 text-textMuted group-hover:text-textSecondary group-hover:translate-x-0.5 transition-all" />
+        <div className="flex flex-col items-center gap-3 w-full max-w-2xl mb-8">
+          {FEATURES.map((feat, i) => {
+            const pyramidWidths = ['w-[70%]', 'w-[80%]', 'w-[90%]', 'w-full'];
+            return (
+              <motion.button
+                key={feat.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.07, duration: 0.4 }}
+                onClick={() => onSuggest(feat.prompt, feat.mode)}
+                className={`group text-left p-4 rounded-2xl bg-gradient-to-br ${feat.color} border ${feat.border} glass-hover transition-all duration-200 hover:scale-[1.02] hover:shadow-card ${pyramidWidths[i]}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 p-2 rounded-lg bg-white/5 ${feat.iconColor}`}>
+                    <feat.icon className="w-4 h-4" />
                   </div>
-                  <p className="text-xs text-textSecondary mt-1 leading-relaxed">{feat.description}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-sm text-textPrimary">{feat.title}</h3>
+                      <ArrowRight className="w-3.5 h-3.5 text-textMuted group-hover:text-textSecondary group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                    <p className="text-xs text-textSecondary mt-1 leading-relaxed">{feat.description}</p>
+                  </div>
                 </div>
-              </div>
-            </motion.button>
-          ))}
+              </motion.button>
+            )
+          })}
         </div>
 
         {/* Quick prompts */}
