@@ -58,9 +58,9 @@ const config = {
           from: { opacity: '0', transform: 'translateX(-20px)' },
           to:   { opacity: '1', transform: 'translateX(0)' },
         },
-        'pulse-dot': {
-          '0%, 80%, 100%': { transform: 'scale(0.6)', opacity: '0.4' },
-          '40%':            { transform: 'scale(1)',   opacity: '1' },
+        'bounce-dot': {
+          '0%, 80%, 100%': { transform: 'translateY(0)', opacity: '0.5' },
+          '40%':           { transform: 'translateY(-6px)', opacity: '1' },
         },
         'shimmer': {
           '0%':   { backgroundPosition: '-200% 0' },
@@ -70,7 +70,7 @@ const config = {
       animation: {
         'fade-in':      'fade-in 0.3s ease-out',
         'slide-in-left':'slide-in-left 0.3s ease-out',
-        'pulse-dot':    'pulse-dot 1.4s ease-in-out infinite',
+        'bounce-dot':   'bounce-dot 1.4s ease-in-out infinite',
         'shimmer':      'shimmer 2s linear infinite',
       },
       boxShadow: {

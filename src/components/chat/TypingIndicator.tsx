@@ -12,7 +12,7 @@ export default function TypingIndicator() {
         <span
           key={i}
           className="w-2 h-2 rounded-full bg-red-400"
-          style={{ animation: `pulse-dot 1.4s ease-in-out ${i * 0.16}s infinite` }}
+          style={{ animation: `bounce-dot 1.2s ease-in-out ${i * 0.15}s infinite` }}
         />
       ))}
     </div>
