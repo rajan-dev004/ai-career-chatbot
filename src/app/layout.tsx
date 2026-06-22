@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           } catch (_) {}
         ` }} />
       </head>
-      <body className="h-screen overflow-hidden bg-bgBase text-textPrimary antialiased">
+      <body className="h-[100dvh] overflow-hidden bg-bgBase text-textPrimary antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

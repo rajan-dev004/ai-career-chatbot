@@ -43,7 +43,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-bgBase relative overflow-hidden">
+    <div className="flex items-center justify-center min-h-[100dvh] bg-bgBase relative overflow-hidden">
       {/* Animated background blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-[#780206]/10 blur-3xl animate-pulse" />

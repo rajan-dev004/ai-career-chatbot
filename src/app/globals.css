@@ -18,18 +18,18 @@
 @tailwind utilities;
 
 :root {
-  --bg-base: #0a0a0f;
-  --bg-sidebar: #0d0d14;
-  --bg-card: #16161e;
-  --bg-input: #1a1a24;
-  --bg-hover: #1e1e28;
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-hover: rgba(255, 255, 255, 0.15);
-  --accent: #6b292b;
-  --accent-light: #920404;
-  --text-1: #f0f0f5;
-  --text-2: #9898b0;
-  --text-3: #55556a;
+  --bg-base: #11111b;
+  --bg-sidebar: #161624;
+  --bg-card: #1f1f2e;
+  --bg-input: #262639;
+  --bg-hover: #2d2d44;
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-hover: rgba(255, 255, 255, 0.22);
+  --accent: #8b3437;
+  --accent-light: #b81c1c;
+  --text-1: #f8f8fc;
+  --text-2: #c5c5df;
+  --text-3: #8a8ab0;
   --scrollbar-w: 6px;
 }
 
@@ -153,19 +153,21 @@ body {
 /* ── Glass card ── */
 @layer components {
   .glass {
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-subtle);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
   }
 
   .glass-hover {
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
 
   .glass-hover:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.11);
     border-color: var(--border-hover);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 255, 255, 0.05);
   }
 
   /* AI response markdown styling */
@@ -177,7 +179,7 @@ body {
   .prose-ai h1,
   .prose-ai h2,
   .prose-ai h3 {
-    color: #662fff;
+    color: #a78bfa;
     font-weight: 600;
     margin: 1.2em 0 0.5em;
   }
@@ -205,7 +207,7 @@ body {
   }
 
   .prose-ai strong {
-    color: #7d6795;
+    color: #c084fc;
     font-weight: 600;
   }
 
@@ -214,7 +216,7 @@ body {
   }
 
   .prose-ai a {
-    color: var(--accent-light);
+    color: #f87171;
     text-decoration: underline;
     text-underline-offset: 2px;
   }
@@ -247,7 +249,7 @@ body {
 
   .prose-ai th {
     background: rgba(99, 102, 241, 0.12);
-    color: var(--accent-light);
+    color: #fca5a5;
     font-weight: 600;
   }
 

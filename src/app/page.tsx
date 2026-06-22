@@ -49,7 +49,7 @@ function AuthenticatedApp({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-bgBase">
+    <div className="flex h-[100dvh] overflow-hidden bg-bgBase">
 
       {/* ── Desktop Sidebar ── */}
       <div className="hidden md:flex">

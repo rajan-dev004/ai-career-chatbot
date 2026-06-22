@@ -67,7 +67,7 @@ export default function ChatInputBar({
   const activeMode = CAREER_MODES.find(m => m.value === careerMode)!
 
   return (
-    <div className="border-t border-borderSubtle bg-bgBase/80 backdrop-blur-xl px-4 py-3">
+    <div className="border-t border-borderSubtle bg-bgBase/80 backdrop-blur-xl px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
       <div className="max-w-3xl mx-auto space-y-2">
         {/* Input container */}
         <div className="relative flex items-end gap-2 rounded-2xl bg-bgCard border border-borderSubtle px-3 py-2.5 focus-within:border-[#780206]/50 transition-colors duration-200">
