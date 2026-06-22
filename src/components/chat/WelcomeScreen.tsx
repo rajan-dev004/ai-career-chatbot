@@ -117,7 +117,7 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="w-full max-w-2xl"
+          className="hidden md:block w-full max-w-2xl"
         >
           <p className="text-[10px] uppercase tracking-widest text-textMuted font-medium mb-2 text-center">
             Or try a quick question
