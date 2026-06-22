@@ -58,12 +58,7 @@ const FEATURES = [
   },
 ]
 
-const QUICK_PROMPTS = [
-  'How do I switch careers to product management?',
-  'What skills do I need for DevOps in 2025?',
-  'Review my career path as a junior developer',
-  'Best certifications for cloud computing?',
-]
+
 
 export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
   return (
@@ -115,28 +110,7 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
           })}
         </div>
 
-        {/* Quick prompts */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="hidden md:block w-full max-w-2xl"
-        >
-          <p className="text-[10px] uppercase tracking-widest text-textMuted font-medium mb-2 text-center">
-            Or try a quick question
-          </p>
-          <div className="flex flex-wrap gap-2 justify-center">
-            {QUICK_PROMPTS.map(p => (
-              <button
-                key={p}
-                onClick={() => onSuggest(p, 'general')}
-                className="px-3 py-1.5 rounded-full text-xs text-textSecondary bg-bgHover border border-borderSubtle hover:bg-bgHover/80 hover:text-textPrimary hover:border-borderHover transition-all duration-150"
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        </motion.div>
+
       </div>
     </div>
   )
