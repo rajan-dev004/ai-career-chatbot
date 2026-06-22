@@ -83,7 +83,7 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
         {/* Feature cards */}
         <div className="flex flex-col items-center gap-3 w-full max-w-2xl mb-8">
           {FEATURES.map((feat, i) => {
-            const pyramidWidths = ['w-[70%]', 'w-[80%]', 'w-[90%]', 'w-full'];
+            const pyramidWidths = ['w-full md:w-[70%]', 'w-full md:w-[80%]', 'w-full md:w-[90%]', 'w-full'];
             return (
               <motion.button
                 key={feat.title}
