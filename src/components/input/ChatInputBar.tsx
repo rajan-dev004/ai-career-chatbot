@@ -32,6 +32,23 @@ export default function ChatInputBar({
   const [modeOpen, setModeOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  const modeContainerRef = useRef<HTMLDivElement>(null)
+
+  // Close mode popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modeContainerRef.current && !modeContainerRef.current.contains(event.target as Node)) {
+        setModeOpen(false)
+      }
+    }
+    if (modeOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [modeOpen])
+
   // Handle prefill from welcome screen chips
   useEffect(() => {
     if (prefill) {
@@ -70,15 +87,15 @@ export default function ChatInputBar({
     <div className="border-t border-borderSubtle bg-bgBase/80 backdrop-blur-xl px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
       <div className="max-w-3xl mx-auto space-y-2">
         {/* Input container */}
-        <div className="relative flex items-end gap-2 rounded-2xl bg-bgCard border border-borderSubtle px-3 py-2.5 focus-within:border-[#780206]/50 transition-colors duration-200">
+        <div className="relative flex items-end gap-2 rounded-2xl bg-bgCard border px-3 py-2.5 animate-pulse-glow focus-within:animate-none focus-within:shadow-[0_0_20px_rgba(156,163,175,0.4)] focus-within:border-[rgba(156,163,175,0.5)] transition-all duration-220">
 
           {/* Career mode chip */}
-          <div className="relative shrink-0 self-end mb-0.5">
+          <div ref={modeContainerRef} className="relative shrink-0 self-end mb-0.5">
             <button
               onClick={() => setModeOpen(v => !v)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#780206]/15 border border-[#780206]/25 text-red-300 text-xs font-medium hover:bg-[#780206]/25 transition-all"
+              className="relative z-50 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#780206]/15 border border-[#780206]/25 text-red-300 text-xs font-medium hover:bg-[#780206]/25 transition-all"
             >
-              <span>{activeMode.icon}</span>
+              <activeMode.icon className="w-4 h-4" />
               <span className="hidden sm:inline">{activeMode.label}</span>
               <ChevronDown className="w-3 h-3" />
             </button>
@@ -101,7 +118,7 @@ export default function ChatInputBar({
                         careerMode === m.value && 'bg-[#780206]/15'
                       )}
                     >
-                      <span className="text-base">{m.icon}</span>
+                      <div className="mt-0.5 text-textSecondary"><m.icon className="w-5 h-5" /></div>
                       <div>
                         <p className={cn('text-xs font-medium', careerMode === m.value ? 'text-red-300' : 'text-textSecondary')}>
                           {m.label}

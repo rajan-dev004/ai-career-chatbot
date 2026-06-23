@@ -34,10 +34,13 @@ export interface ChatState {
   careerMode: CareerMode
 }
 
-export const CAREER_MODES: { value: CareerMode; label: string; icon: string; description: string }[] = [
-  { value: 'general',    label: 'General',       icon: '💬', description: 'Career Q&A and advice' },
-  { value: 'roadmap',    label: 'Roadmap',        icon: '🗺️', description: '6-12 month career plan' },
-  { value: 'skill_gap',  label: 'Skill Gap',      icon: '🎯', description: 'Identify missing skills' },
-  { value: 'comparison', label: 'Job Compare',    icon: '⚖️', description: 'Compare job roles' },
-  { value: 'projects',   label: 'Projects',       icon: '🛠️', description: 'Portfolio project ideas' },
+import type { LucideIcon } from 'lucide-react'
+import { MessageCircle, Map, Target, Scale, Wrench } from 'lucide-react'
+
+export const CAREER_MODES: { value: CareerMode; label: string; icon: LucideIcon; description: string }[] = [
+  { value: 'general',    label: 'General',       icon: MessageCircle, description: 'Career Q&A and advice' },
+  { value: 'roadmap',    label: 'Roadmap',       icon: Map,           description: '6-12 month career plan' },
+  { value: 'skill_gap',  label: 'Skill Gap',     icon: Target,        description: 'Identify missing skills' },
+  { value: 'comparison', label: 'Job Compare',   icon: Scale,         description: 'Compare job roles' },
+  { value: 'projects',   label: 'Projects',      icon: Wrench,        description: 'Portfolio project ideas' },
 ]

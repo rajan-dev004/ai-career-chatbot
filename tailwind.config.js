@@ -66,18 +66,31 @@ const config = {
           '0%':   { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        'pulse-glow': {
+          '0%, 100%': { boxShadow: '0 0 10px rgba(156, 163, 175, 0.1)', borderColor: 'rgba(179, 183, 188, 0.2)' },
+          '50%':      { boxShadow: '0 0 25px rgba(65, 124, 226, 0.4)', borderColor: 'rgba(156, 163, 175, 0.5)' },
+        },
+        'pulse-text-glow': {
+          '0%, 100%': { filter: 'drop-shadow(0 0 10px rgba(220, 38, 38, 0.3))' },
+          '50%':      { filter: 'drop-shadow(0 0 25px rgba(220, 38, 38, 0.7))' },
+        },
       },
       animation: {
         'fade-in':      'fade-in 0.3s ease-out',
         'slide-in-left':'slide-in-left 0.3s ease-out',
         'bounce-dot':   'bounce-dot 1.4s ease-in-out infinite',
         'shimmer':      'shimmer 2s linear infinite',
+        'pulse-glow':   'pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse-text-glow': 'pulse-text-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       boxShadow: {
         'glow':       '0 0 20px rgba(120, 2, 6, 0.3)',
         'glow-sm':    '0 0 10px rgba(120, 2, 6, 0.2)',
         'card':       '0 4px 24px rgba(0,0,0,0.4)',
         'card-hover': '0 8px 32px rgba(0,0,0,0.6)',
+      },
+      maxWidth: {
+        '3xl': '58rem',
       },
     },
   },

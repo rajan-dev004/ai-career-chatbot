@@ -75,9 +75,12 @@ export default function Sidebar({
           'flex items-center gap-2.5 px-4 py-4 border-b border-borderSubtle',
           collapsed && 'justify-center px-2'
         )}>
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#780206] to-[#061161] flex items-center justify-center shrink-0 shadow-lg shadow-[#780206]/30">
+          <button 
+            onClick={() => setCollapsed(v => !v)}
+            className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#780206] to-[#061161] flex items-center justify-center shrink-0 shadow-lg shadow-[#780206]/30 hover:brightness-110 transition-all cursor-pointer"
+          >
             <Trophy className="w-4 h-4 text-white" />
-          </div>
+          </button>
           <AnimatePresence>
             {!collapsed && (
               <motion.div

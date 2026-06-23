@@ -100,27 +100,36 @@ export default function MessageBubble({ message, isStreaming, streamingText }: M
       </div>
 
       {/* Bubble */}
-      <div className={cn('flex flex-col max-w-[80%] min-w-0', isUser && 'items-end')}>
+      <div className={cn('flex flex-col max-w-[100%] min-w-0', isUser && 'items-end')}>
         <div className={cn(
-          'relative rounded-2xl px-4 py-3 text-sm leading-relaxed',
+          'relative group/bubble rounded-2xl px-4 py-3 text-sm leading-relaxed',
           isUser
             ? 'bg-gradient-to-br from-[#780206] to-[#061161] text-white rounded-tr-sm'
             : 'bg-bgCard border border-borderSubtle rounded-tl-sm'
         )}>
+          {!isStreaming && (
+            <div className="absolute top-2 right-2 opacity-0 group-hover/bubble:opacity-100 transition-opacity z-10">
+              <div className="bg-bgCard/80 backdrop-blur shadow-sm rounded-md border border-borderSubtle">
+                <CopyButton text={content} />
+              </div>
+            </div>
+          )}
+
           {isUser ? (
             <p className="whitespace-pre-wrap">{content}</p>
           ) : (
-            <MarkdownContent content={content} isStreaming={isStreaming} />
+            <div className={cn(!isUser && !isStreaming && "pr-6")}>
+              <MarkdownContent content={content} isStreaming={isStreaming} />
+            </div>
           )}
         </div>
 
-        {/* Timestamp + copy */}
+        {/* Timestamp */}
         <div className={cn(
           'flex items-center gap-1.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity',
           isUser && 'flex-row-reverse'
         )}>
           <span className="text-[10px] text-textMuted">{formatTimestamp(message.timestamp)}</span>
-          {!isStreaming && <CopyButton text={content} />}
         </div>
       </div>
     </motion.div>
