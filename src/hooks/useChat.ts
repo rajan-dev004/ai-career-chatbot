@@ -179,7 +179,15 @@ export function useChat(userId: string) {
       }
     }
 
-    // 2. Prevent rapid multiple clicks creating multiple chats before state updates
+    // 2. Check if ANY chat is already empty, and if so, switch to it
+    const existingEmptyChat = Object.values(chatsRef.current).find(c => c.messages.length === 0)
+    if (existingEmptyChat) {
+      setCurrentChatId(existingEmptyChat.id)
+      setStreamingText('')
+      return existingEmptyChat.id
+    }
+
+    // 3. Prevent rapid multiple clicks creating multiple chats before state updates
     const lastEmptyId = lastCreatedEmptyChatIdRef.current
     if (lastEmptyId) {
       const lastEmptyChat = chatsRef.current[lastEmptyId]
@@ -284,8 +292,10 @@ export function useChat(userId: string) {
     }
   }, [userId, chats, isCloudSyncing])
 
-  const sendMessage = useCallback(async (userInput: string) => {
+  const sendMessage = useCallback(async (userInput: string, modeOverride?: CareerMode) => {
     if (!userInput.trim() || isStreaming) return
+
+    const activeMode = modeOverride ?? careerMode
 
     // Get or create chat
     let chatId = currentChatId
@@ -297,7 +307,7 @@ export function useChat(userId: string) {
         title: 'New Chat',
         timestamp: new Date().toISOString(),
         messages: [],
-        mode: careerMode,
+        mode: activeMode,
       }
     } else {
       existingChat = { ...chats[chatId] }
@@ -308,7 +318,7 @@ export function useChat(userId: string) {
       role: 'user',
       content: userInput.trim(),
       timestamp: new Date().toISOString(),
-      mode: careerMode,
+      mode: activeMode,
     }
 
     const updatedMessages = [...existingChat.messages, userMsg]
@@ -347,7 +357,7 @@ export function useChat(userId: string) {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userInput.trim(), mode: careerMode }),
+        body: JSON.stringify({ message: userInput.trim(), mode: activeMode }),
         signal: abortRef.current.signal,
       })
 
@@ -386,7 +396,7 @@ export function useChat(userId: string) {
         role: 'assistant',
         content: fullText,
         timestamp: new Date().toISOString(),
-        mode: careerMode,
+        mode: activeMode,
       }
 
       const finalChat: Chat = {
@@ -414,8 +424,9 @@ export function useChat(userId: string) {
       const errMsg: Message = {
         id: uuidv4(),
         role: 'assistant',
-        content: `❌ **Error:** ${(err as Error).message}`,
+        content: "Oops! Something went wrong while generating the response. Please try again.",
         timestamp: new Date().toISOString(),
+        isError: true,
       }
       const errorChat: Chat = {
         ...updatedChat,
@@ -437,6 +448,27 @@ export function useChat(userId: string) {
     abortRef.current?.abort()
   }, [])
 
+  const retryMessage = useCallback(async () => {
+    if (isStreaming) return
+    const activeChat = currentChatId ? chats[currentChatId] : null
+    if (!activeChat) return
+    
+    // Find the last user message
+    const msgs = activeChat.messages
+    const lastUserMsg = [...msgs].reverse().find(m => m.role === 'user')
+    if (!lastUserMsg) return
+
+    // Remove the error message and the user message from the state before resending
+    const newMessages = msgs.filter(m => m.id !== lastUserMsg.id && !m.isError)
+    
+    setChats(prev => ({
+      ...prev,
+      [currentChatId!]: { ...activeChat, messages: newMessages }
+    }))
+    
+    await sendMessage(lastUserMsg.content, lastUserMsg.mode)
+  }, [currentChatId, chats, isStreaming, sendMessage])
+
   return {
     chats,
     currentChatId,
@@ -448,6 +480,7 @@ export function useChat(userId: string) {
     setCareerMode,
     sendMessage,
     stopStreaming,
+    retryMessage,
     createNewChat,
     loadChat,
     deleteChat,

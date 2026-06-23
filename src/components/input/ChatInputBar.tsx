@@ -145,11 +145,6 @@ export default function ChatInputBar({
 
           {/* Action buttons */}
           <div className="flex items-center gap-1 shrink-0 self-end mb-0.5">
-            {/* Mic */}
-            <button className="p-1.5 rounded-lg text-textMuted hover:text-textSecondary hover:bg-bgHover transition-all">
-              <Mic className="w-4 h-4" />
-            </button>
-
             {/* Send / Stop */}
             {isStreaming ? (
               <button

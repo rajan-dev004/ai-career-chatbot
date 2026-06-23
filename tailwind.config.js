@@ -59,8 +59,8 @@ const config = {
           to:   { opacity: '1', transform: 'translateX(0)' },
         },
         'bounce-dot': {
-          '0%, 80%, 100%': { transform: 'translateY(0)', opacity: '0.5' },
-          '40%':           { transform: 'translateY(-6px)', opacity: '1' },
+          '0%, 60%, 100%': { transform: 'translateY(0)', opacity: '0.3' },
+          '30%':           { transform: 'translateY(-5px)', opacity: '1' },
         },
         'shimmer': {
           '0%':   { backgroundPosition: '-200% 0' },

@@ -20,10 +20,11 @@ interface ChatContainerProps {
   isStreaming: boolean
   streamingText: string
   onSuggest: (text: string, mode: CareerMode) => void
+  onRetry?: () => void
 }
 
 export default function ChatContainer({
-  messages, isStreaming, streamingText, onSuggest
+  messages, isStreaming, streamingText, onSuggest, onRetry
 }: ChatContainerProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -41,7 +42,7 @@ export default function ChatContainer({
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
           <AnimatePresence initial={false}>
             {messages.map(msg => (
-              <MessageBubble key={msg.id} message={msg} />
+              <MessageBubble key={msg.id} message={msg} onRetry={onRetry} />
             ))}
 
             {/* Streaming message */}

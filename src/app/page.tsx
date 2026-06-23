@@ -34,7 +34,7 @@ function AuthenticatedApp({ userId }: { userId: string }) {
     chats, currentChatId, messages,
     isStreaming, streamingText,
     careerMode, setCareerMode,
-    sendMessage, stopStreaming,
+    sendMessage, stopStreaming, retryMessage,
     createNewChat, loadChat,
     deleteChat, clearAllChats,
     isCloudSyncing,
@@ -118,6 +118,7 @@ function AuthenticatedApp({ userId }: { userId: string }) {
           isStreaming={isStreaming}
           streamingText={streamingText}
           onSuggest={handleSuggest}
+          onRetry={retryMessage}
         />
 
         {/* Input bar */}

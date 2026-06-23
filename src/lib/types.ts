@@ -16,6 +16,7 @@ export interface Message {
   content: string
   timestamp: string
   mode?: CareerMode
+  isError?: boolean
 }
 
 export interface Chat {

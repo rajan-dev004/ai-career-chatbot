@@ -13,7 +13,7 @@ import { motion } from 'framer-motion'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
-import { Copy, Check, User, Sparkles } from 'lucide-react'
+import { Copy, Check, User, Sparkles, RefreshCw } from 'lucide-react'
 import { cn, formatTimestamp } from '@/lib/utils'
 import type { Message } from '@/lib/types'
 
@@ -36,6 +36,7 @@ interface MessageBubbleProps {
   message: Message
   isStreaming?: boolean
   streamingText?: string
+  onRetry?: () => void
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -75,7 +76,7 @@ function MarkdownContent({ content, isStreaming }: { content: string; isStreamin
   )
 }
 
-export default function MessageBubble({ message, isStreaming, streamingText }: MessageBubbleProps) {
+export default function MessageBubble({ message, isStreaming, streamingText, onRetry }: MessageBubbleProps) {
   const isUser = message.role === 'user'
   const content = isStreaming && streamingText !== undefined ? streamingText : message.content
 
@@ -119,7 +120,22 @@ export default function MessageBubble({ message, isStreaming, streamingText }: M
             <p className="whitespace-pre-wrap">{content}</p>
           ) : (
             <div className={cn(!isUser && !isStreaming && "pr-6")}>
-              <MarkdownContent content={content} isStreaming={isStreaming} />
+              {message.isError ? (
+                <div className="flex flex-col gap-3">
+                  <p className="text-red-400">{content}</p>
+                  {onRetry && (
+                    <button 
+                      onClick={onRetry}
+                      className="self-end px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/20 transition-all flex items-center gap-1.5"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Retry
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <MarkdownContent content={content} isStreaming={isStreaming} />
+              )}
             </div>
           )}
         </div>

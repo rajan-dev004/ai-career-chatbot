@@ -11,8 +11,8 @@ export default function TypingIndicator() {
       {[0, 1, 2].map(i => (
         <span
           key={i}
-          className="w-2 h-2 rounded-full bg-red-400"
-          style={{ animation: `bounce-dot 1.2s ease-in-out ${i * 0.15}s infinite` }}
+          className="w-2 h-2 rounded-full bg-textSecondary"
+          style={{ animation: `bounce-dot 1.4s ease-in-out ${i * 0.16}s infinite` }}
         />
       ))}
     </div>
